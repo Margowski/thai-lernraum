@@ -190,6 +190,9 @@ nav a i{font-style:normal;margin-right:5px}
   main{padding-bottom:84px} #stopBtn{bottom:74px} #todayBar{bottom:58px!important} #toasts{bottom:128px}
   #subnav{padding:0 12px 6px} .unit>summary{padding:12px}
 }
+.aigate{border-left:0;background:var(--warn-soft);border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14px}
+.aigate b{display:block;margin-bottom:2px} .aigate .row{margin-top:8px}
+body.no-ai .ai-only{opacity:.4;pointer-events:none;filter:grayscale(1);user-select:none}
 .lgrid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .lcell{min-width:34px;height:34px;padding:0 6px;border-radius:9px;border:1px solid var(--line);background:transparent;color:inherit;font-size:13px;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;justify-content:center}
 .lcell.done{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600} .lcell.part{border-color:var(--accent);border-width:2px;color:var(--accent);font-weight:600}
@@ -451,7 +454,8 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
         <div class="grid" id="dlGrid" style="margin-top:12px"></div>
         <div class="card"><b>✨ Neuer Dialog aus deinem Lernstand</b>
           <p class="small muted">Die KI schreibt einen Dialog nur mit Sätzen, die du schon gelernt hast.</p>
-          <button class="primary" id="dlGen">Dialog erzeugen</button> <span class="small muted" id="dlGenStatus"></span></div>
+          <div data-aigate="Diese Funktion" data-aismall="1"></div>
+          <span class="ai-only"><button class="primary" id="dlGen">Dialog erzeugen</button></span> <span class="small muted" id="dlGenStatus"></span></div>
       </div>
       <div id="dlRun" class="hidden">
         <div class="row"><button id="dlBack">← Übersicht</button><b id="dlTitle"></b></div>
@@ -489,6 +493,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 <!-- TUTOR -->
 <section class="view" id="v-tutor">
   <h1>Tutor <span class="th muted" style="font-size:18px">ครูพลอย</span></h1>
+  <div data-aigate="Der Tutor"></div>
   <details class="card small" id="tutorHelp"><summary><b>❓ So funktioniert der Tutor</b></summary>
     <ol style="margin:8px 0 0;padding-left:20px">
       <li><b>Übung wählen:</b> Tippe oben auf eine Übung, z. B. „Begrüßung üben“. Kru Ploy (eine Thai-Lehrerin) beginnt dann das Gespräch.</li>
@@ -498,8 +503,8 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
       <li><b>Rückmeldung:</b> War etwas falsch, zeigt ein roter Kasten die richtige Form und warum. Grün heißt: korrekt.</li>
     </ol>
     <p class="muted" style="margin:6px 0 0">Die Antwort braucht ein paar Sekunden, weil die KI sie erst schreibt – währenddessen steht „Kru Ploy denkt nach …“ im Gespräch.</p></details>
-  <div class="chips" id="tutorChips"></div>
-  <div class="card">
+  <div class="chips ai-only" id="tutorChips"></div>
+  <div class="card ai-only">
     <div class="chat" id="tutorChat"></div>
     <div class="typing hidden" id="tutorTyping">⏳ Kru Ploy denkt nach … (ein paar Sekunden)</div>
     <div class="composer">
@@ -519,7 +524,8 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
   <div id="rpList">
     <h1>Rollenspiele</h1>
     <p class="muted">Der Tutor spielt eine Rolle. Du hast Lernziele; sie werden abgehakt, wenn du sie erfüllst. Am Ende gibt es eine Auswertung.</p>
-    <div class="grid" id="rpGrid"></div>
+    <div data-aigate="Die Rollenspiele"></div>
+    <div class="grid ai-only" id="rpGrid"></div>
   </div>
   <div id="rpRun" class="hidden">
     <div class="row"><button id="rpBack">← Übersicht</button><h1 id="rpTitle" style="margin:0"></h1></div>
@@ -556,7 +562,8 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
     <div class="card">
       <b>Neues Thema mit KI erstellen</b>
       <p class="small muted">z. B. „Familie“, „Wetter“, „Arbeit als Ingenieur“, „Massage-Salon“</p>
-      <div class="row"><input type="text" id="fcTopic" placeholder="Thema" style="flex:1;width:auto"><button class="primary" id="fcGen">Deck erzeugen</button></div>
+      <div data-aigate="Diese Funktion" data-aismall="1"></div>
+      <div class="row ai-only"><input type="text" id="fcTopic" placeholder="Thema" style="flex:1;width:auto"><button class="primary" id="fcGen">Deck erzeugen</button></div>
       <div class="small muted" id="fcGenStatus"></div>
     </div>
   </div>
@@ -571,6 +578,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 <!-- ÜBERSETZER -->
 <section class="view" id="v-uebersetzer">
   <h1>Übersetzer – Wort für Wort</h1>
+  <div data-aigate="Der Übersetzer" data-aipart="Ohne Schlüssel zerlegt er nur Thai-Sätze in Wörter, die im Kurs vorkommen. Übersetzen und Deutsch → Thai gehen nicht."></div>
   <p class="muted">Deutsch oder Thai eingeben. Du bekommst die Übersetzung, jedes Wort mit Ton und Funktion, und den Satzbau erklärt.</p>
   <div class="card">
     <div class="composer" style="margin-top:0">
@@ -689,7 +697,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "3.3";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "3.4";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -1462,6 +1470,22 @@ async function askLLM(messages, opts = {}){
   throw {code:"no_ai", message:"Keine KI verfügbar"};
 }
 function aiAvailable(){ return !!sampleFn || !!S.settings.apiKey; }
+// Gesperrt heißt: Die Prüfung ist abgeschlossen und es gibt weder eine Claude-Freigabe noch einen eingetragenen Schlüssel.
+function aiLocked(){ return aiState !== "prüfe…" && !aiAvailable(); }
+function renderAiGate(){
+  const locked = aiLocked(), onClaude = !!(window.claude && typeof window.claude.use === "function");
+  document.body.classList.toggle("no-ai", locked);
+  document.querySelectorAll("[data-aigate]").forEach(el => {
+    if (!locked){ el.innerHTML = ""; return; }
+    const what = el.dataset.aigate, small = el.dataset.aismall;
+    el.innerHTML = `<div class="aigate"><b>🔒 ${esc(what)} ${what.startsWith("Die ") ? "funktionieren" : "funktioniert"} hier ${el.dataset.aipart ? "nur eingeschränkt" : "nicht"} – es fehlt die KI-Verbindung.</b>
+      ${onClaude ? "Die KI-Nutzung wurde auf claude.ai nicht freigegeben." : "Auf diesem Gerät ist kein Anthropic-Schlüssel eingetragen."}
+      ${el.dataset.aipart ? esc(el.dataset.aipart) : small ? "" : "Lektionen, Karteikarten, Hördialoge, Schriftkurs und Tests gehen ohne Schlüssel."}
+      ${onClaude ? "" : `<div class="row"><a href="#einstellungen"><button class="${small ? "" : "primary"}">Schlüssel eintragen</button></a>${small ? "" : `<a href="#start"><button class="ghost">Zum Lernpfad</button></a>`}</div>`}</div>`;
+  });
+  const sp = document.querySelector('#nav a[data-g="sprechen"] span'); if (sp) sp.textContent = "Sprechen" + (locked ? " 🔒" : "");
+  document.querySelectorAll("#subnav a").forEach(a => { if (AI_VIEWS.includes(a.dataset.v)) a.textContent = VIEW_LABEL[a.dataset.v] + (locked ? " 🔒" : ""); });
+}
 function aiErrorText(e){
   if (e && e.code === "no_ai") return "Keine KI verbunden. Auf claude.ai bitte die Freigabe erlauben; lokal unter ⚙ einen API-Schlüssel eintragen.";
   if (e && e.code === "rate_limited") return "Gerade zu viele Anfragen. Bitte kurz warten.";
@@ -1848,6 +1872,7 @@ function selfTest(){
 
 /* ================= Status & Navigation ================= */
 function renderStatus(){
+  renderAiGate();
   const el = $("#statusPills"); if (!el) return;
   const aiOk = aiAvailable();
   el.innerHTML = `<span class="pill ${aiOk?"ok":"no"}">KI: ${esc(aiState)}</span>
@@ -1864,6 +1889,7 @@ const GROUPS = {lernen:["start","lektionen"], karten:["karteikarten"], sprechen:
 const VIEW_LABEL = {start:"Lernpfad", lektionen:"Alle Übungen", tutor:"Tutor", rollenspiele:"Rollenspiele", einstellungen:"Einstellungen", uebersetzer:"Übersetzer", toene:"Töne & Schrift"};
 const groupOf = v => Object.keys(GROUPS).find(g => GROUPS[g].includes(v)) || "lernen";
 const lastIn = {};
+const AI_VIEWS = ["tutor","rollenspiele","uebersetzer"];
 let pathActive = null;
 function show(v){
   const ids = ["start","lektionen","tutor","rollenspiele","karteikarten","uebersetzer","toene","fortschritt","einstellungen"];
@@ -1873,7 +1899,7 @@ function show(v){
   document.querySelectorAll("section.view").forEach(s => s.classList.toggle("on", s.id === "v-"+v));
   { const g = groupOf(v); lastIn[g] = v;
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.g === g));
-    $("#subnav").innerHTML = GROUPS[g].length > 1 ? GROUPS[g].map(x => `<a href="#${x}" data-v="${x}" class="${x === v ? "on" : ""}">${VIEW_LABEL[x]}</a>`).join("") : ""; }
+    $("#subnav").innerHTML = GROUPS[g].length > 1 ? GROUPS[g].map(x => `<a href="#${x}" data-v="${x}" class="${x === v ? "on" : ""}">${VIEW_LABEL[x]}${AI_VIEWS.includes(x) && aiLocked() ? " 🔒" : ""}</a>`).join("") : ""; }
   if (v !== "lektionen" && v !== "tutor") pathActive = null;
   if (v === "start"){ if ($("#pathRun").classList.contains("hidden")) renderStart(); }
   renderPathBar();
@@ -1881,7 +1907,7 @@ function show(v){
   if (v === "lektionen"){ const busy = !lkParked && ((lk && lk.phase !== "done") || (sk && sk.phase !== "done")); if (!busy){ $("#lkRun").classList.add("hidden"); $("#lkList").classList.remove("hidden"); } setSub(curSub); }
   if (v !== "lektionen" && v !== "tutor"){ seqToken++; }
   if (v === "karteikarten" && $("#fcRun").classList.contains("hidden")) renderDecks();
-  if (v === "tutor" && !tutor.hist.length) tutorGreet();
+  if (v === "tutor" && !tutor.hist.length && !aiLocked()) tutorGreet();
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", () => show(location.hash.slice(1)));
