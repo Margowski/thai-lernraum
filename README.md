@@ -81,7 +81,11 @@ Einen Fehler gefunden oder eine Idee? Gern als [Issue](https://github.com/Margow
 
 Eine einzige HTML-Datei ohne Fremdbibliotheken (`index.html`). `manifest.webmanifest`, `sw.js` und die Symbole machen sie installierbar und offline nutzbar. Sprachausgabe und Spracherkennung kommen vom Browser.
 
-Der Quelltext ist einsehbar. Eine Lizenz zur Weiterverwendung ist noch nicht festgelegt.
+## Lizenz
+
+© 2026 Olaf Margowski. Die App darf kostenlos genutzt werden. Quelltext und Lerninhalte dürfen nur mit Zustimmung des Autors kopiert, verändert oder weiterverbreitet werden. Einzelheiten stehen in [LIZENZ.md](LIZENZ.md).
+
+Schrift: Noto Sans Thai und Noto Sans Thai Looped, © 2022 The Noto Project Authors, SIL Open Font License 1.1 ([OFL.txt](OFL.txt)).
 
 ---
 

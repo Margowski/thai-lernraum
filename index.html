@@ -691,13 +691,18 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
     <textarea id="exportText" class="hidden" rows="3" readonly></textarea>
     <button id="setResetSrs">Lernfortschritt zurücksetzen</button> <span id="resetConfirm" class="hidden"><button id="resetYes" class="primary">Wirklich löschen</button> <button id="resetNo">Abbrechen</button></span>
   </div>
+  <div class="card small" id="aboutBox" style="margin-top:14px"><b>Über diese App</b>
+    <p style="margin:6px 0 0">Thai Lernraum, Version <span id="aboutVer"></span>. © 2026 Olaf Margowski.</p>
+    <p style="margin:6px 0 0">Die App darf kostenlos genutzt werden. Quelltext und Lerninhalte dürfen nur mit Zustimmung des Autors kopiert, verändert oder weiterverbreitet werden.</p>
+    <p style="margin:6px 0 0">Die Thai-Inhalte sind noch nicht vollständig von Muttersprachlern geprüft.</p>
+    <p class="muted" style="margin:6px 0 0">Schrift: Noto Sans Thai und Noto Sans Thai Looped, © 2022 The Noto Project Authors, lizenziert unter der SIL Open Font License 1.1 (<a href="https://openfontlicense.org" target="_blank" rel="noopener">openfontlicense.org</a>). Quelltext und Lizenztexte: <a href="https://github.com/Margowski/thai-lernraum" target="_blank" rel="noopener">github.com/Margowski/thai-lernraum</a></p></div>
 </section>
 </main>
 <div id="todayBar" class="hidden" style="position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.06)"></div>
 
 <script>
 "use strict";
-const APP_VERSION = "3.5";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "3.6";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -5436,6 +5441,7 @@ selfTest();
 const platformReady = initPlatform();
 platformReady.then(() => setTimeout(() => { try { if (curView === "start") maybeWelcome(); } catch(e){ console.warn(e); } }, 400));
 initBackup();
+{ const av = document.getElementById("aboutVer"); if (av) av.textContent = APP_VERSION; }
 renderSync(); renderInstall(); if (syncCode()) setTimeout(syncNow, 800);
 loadVoices();
 show(location.hash.slice(1) || "start");
