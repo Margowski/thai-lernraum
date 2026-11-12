@@ -682,7 +682,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
   <div class="card">
     <h3>Daten</h3>
     <p class="small muted" id="syncInfo"></p>
-    <div class="card" style="margin:10px 0"><b>🔄 Abgleich zwischen deinen Geräten</b><div id="syncBox" style="margin-top:6px"></div></div>
+    <div class="card hidden" id="syncCard" style="margin:10px 0"><b>🔄 Abgleich zwischen deinen Geräten</b><div id="syncBox" style="margin-top:6px"></div></div>
     <div class="card" style="margin:10px 0"><b>📲 Als App installieren</b><div id="installBox" class="small" style="margin-top:6px"></div></div>
     <div id="backupInfo" style="margin:8px 0"></div>
     <p class="small muted" id="selfTestInfo"></p>
@@ -697,7 +697,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "3.4";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "3.5";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -1599,6 +1599,7 @@ async function syncNow(){
   try {
     const rows = await syncRpc("thai_sync_get", {p_code: code});
     const remote = rows && rows[0] && rows[0].data && rows[0].data.p;
+    if (!rows || !rows.length){ delete S.settings.syncCode; saveSettings(); throw new Error("Diesen Code kennt die Datenbank nicht. Bitte prüfen und neu eingeben"); }
     const mine = JSON.stringify(canon(S.progress));
     const merged = remote ? mergeProgress(S.progress, remote) : S.progress;
     const mj = JSON.stringify(canon(merged));
@@ -1630,13 +1631,13 @@ function newSyncCode(){
 function renderSync(){
   const el = document.getElementById("syncBox"); if (!el) return;
   const code = syncCode();
+  // Der Abgleich ist dem Betreiber vorbehalten: sichtbar nur mit eingetragenem Code oder nach Aufruf der Adresse …#abgleich
+  const card = document.getElementById("syncCard"); if (card) card.classList.toggle("hidden", !code && !S.settings.syncOn);
   if (!code){
-    el.innerHTML = `<p class="small muted" style="margin:0 0 8px">Damit PC und Handy denselben Lernstand haben. Dein Stand wird unter einem privaten Code in einer eigenen Datenbank (Frankfurt) abgelegt. Wer den Code kennt, kann den Lernstand lesen – behandle ihn wie ein Passwort.</p>
-      <div class="row"><button class="primary" id="syNew">Abgleich neu einrichten</button></div>
-      <div class="row" style="margin-top:8px"><input id="syIn" placeholder="Code vom anderen Gerät, z. B. THAI-ABCDE-…" style="flex:1;min-width:200px" autocapitalize="characters" autocomplete="off"><button id="syJoin">Verbinden</button></div>
-      <div class="small" id="syMsg" style="margin-top:6px;color:var(--bad)"></div>`;
-    $("#syNew").onclick = () => { S.settings.syncCode = newSyncCode(); saveSettings(); renderSync(); syncNow(); };
-    $("#syJoin").onclick = () => { const v = $("#syIn").value.toUpperCase().replace(/\s+/g, ""); if (v.length < 20){ $("#syMsg").textContent = "Der Code ist zu kurz. Bitte vollständig eingeben, mit „THAI-“ am Anfang."; return; } S.settings.syncCode = v; saveSettings(); renderSync(); syncNow(); };
+    el.innerHTML = `<p class="small muted" style="margin:0 0 8px">Gleicht den Lernstand zwischen deinen eigenen Geräten ab. Die Datenbank nimmt nur bereits eingerichtete Codes an; neue Codes sind gesperrt.</p>
+      <div class="row"><input id="syIn" placeholder="Dein Code, z. B. THAI-ABCDE-…" style="flex:1;min-width:200px" autocapitalize="characters" autocomplete="off"><button class="primary" id="syJoin">Verbinden</button></div>
+      <div class="small" id="syMsg" style="margin-top:6px;color:var(--bad)">${sync.err ? esc(sync.err) : ""}</div>`;
+    $("#syJoin").onclick = () => { const v = $("#syIn").value.toUpperCase().replace(/\s+/g, ""); if (v.length < 20){ $("#syMsg").textContent = "Der Code ist zu kurz. Bitte vollständig eingeben, mit „THAI-“ am Anfang."; return; } sync.err = ""; S.settings.syncCode = v; saveSettings(); renderSync(); syncNow(); };
     return;
   }
   const when = sync.last ? new Date(sync.last).toLocaleTimeString("de-DE", {hour:"2-digit", minute:"2-digit"}) : "";
@@ -1892,6 +1893,7 @@ const lastIn = {};
 const AI_VIEWS = ["tutor","rollenspiele","uebersetzer"];
 let pathActive = null;
 function show(v){
+  if (v === "abgleich"){ S.settings.syncOn = true; saveSettings(); renderSync(); location.hash = "einstellungen"; return; }
   const ids = ["start","lektionen","tutor","rollenspiele","karteikarten","uebersetzer","toene","fortschritt","einstellungen"];
   if (!ids.includes(v)) v = "start";
   if (curView !== v) stopAllSound();
@@ -1995,7 +1997,7 @@ function renderStart(){
   { let d2 = 0, learned = 0; allDecks().forEach(d => { const st = deckStats(d); d2 += st.due; learned += st.learned; });
     $("#stDue").textContent = d2; $("#stLearned").textContent = learned; }
   checkBadges(true); renderDash();
-  { const n = (S.settings.name || "").trim(), h = new Date().getHours(); $("#startHello").textContent = n ? `${h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend"}, ${n}!` : "Dein Weg zu den Thai-Grundlagen"; }
+  { const n = (S.settings.name || "").trim(), h = new Date().getHours(); $("#startHello").textContent = n ? `${h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend"}, ${n}!` : `${h < 11 ? "Guten Morgen" : h < 18 ? "Hallo" : "Guten Abend"}, User!`; }
   renderStatus();
 }
 function renderDecks(){
