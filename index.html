@@ -177,7 +177,10 @@ nav a i{font-style:normal;margin-right:5px}
 .pstep.main .plab b{font-weight:650}
 @media (max-width:640px){ .pstep.sub{width:calc(100% - 22px);margin-left:22px} }
 .pstep .pgo{flex:none;font-size:13px;font-weight:600;color:var(--accent)}
-#pathBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 14px;margin-bottom:10px} #pathBar.hidden{display:none}
+#pathBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 14px;margin-bottom:10px;border-left:4px solid var(--accent)} #pathBar.hidden{display:none}
+button.pbnext{border:2px solid var(--accent);color:var(--accent);font-weight:650;background:transparent} button.pbnext.primary{color:#fff;background:var(--accent)}
+.pathcont{justify-content:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)} .pathcont .pclab{width:100%;text-align:center}
+.usteps .uhint{padding:2px 6px 8px;margin:0}
 .exrow .il{justify-content:flex-start} .exrow .lit{text-align:left} .exrow{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
 .utopts{display:grid;gap:8px;margin-top:10px} .utopts button{text-align:left;min-height:48px;padding:10px 14px}
 .utopts button.ok{background:var(--good-soft);border-color:var(--good);color:inherit} .utopts button.no{background:var(--bad-soft);border-color:var(--bad);color:inherit}
@@ -485,7 +488,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
     </div>
   </div>
   <div id="lkRun" class="hidden">
-    <div class="row"><button id="lkBack">← Zurück</button><b id="lkTitle"></b><span class="muted small" id="lkStep"></span><button class="ghost small" id="lkQuickBtn" style="margin-left:auto" title="Tempo und Umschrift einstellen">⚙ Tempo &amp; Umschrift</button></div>
+    <div class="row"><button id="lkBack">← Übersicht</button><b id="lkTitle"></b><span class="muted small" id="lkStep"></span><button class="ghost small" id="lkQuickBtn" style="margin-left:auto" title="Tempo und Umschrift einstellen">⚙ Tempo &amp; Umschrift</button></div>
     <div id="lkQuick" class="hidden card" style="margin:8px 0;padding:10px 14px">
       <div class="row" style="gap:18px;flex-wrap:wrap">
         <label class="small">Sprechtempo <b id="lqRateVal"></b><br><input type="range" id="lqRate" min="0.4" max="1.1" step="0.05" style="width:180px"></label>
@@ -709,7 +712,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "3.9";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "4.0";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -1201,8 +1204,8 @@ function renderDialog(){
   } else {
     c.innerHTML = `<div class="fc" style="min-height:0"><div class="big">🎧</div><div class="mid">Dialog geschafft</div>
       <p class="muted">Tipp: Hör dir denselben Dialog in ein paar Tagen noch einmal an – beim wiederholten Hören verstehst du jedes Mal mehr.</p></div>
-      <div class="row" style="justify-content:center"><button id="dlBackL">Zur Übersicht</button><button id="dlAgainAll">Nochmal von vorn</button></div>`;
-    $("#dlBackL").onclick = () => $("#dlBack").click();
+      <div class="row" style="justify-content:center">${pathActive ? "" : `<button id="dlBackL">Zur Übersicht</button>`}<button id="dlAgainAll">Nochmal von vorn</button></div>${pathContHTML()}`;
+    if ($("#dlBackL")) $("#dlBackL").onclick = () => $("#dlBack").click();
     $("#dlAgainAll").onclick = () => startDialog(d.id);
   }
 }
@@ -1974,7 +1977,7 @@ document.querySelectorAll("#nav a").forEach(a => a.addEventListener("click", e =
     if (curView !== GROUPS[g][0]) location.hash = GROUPS[g][0]; else backToOverview();
   } else location.hash = g === "lernen" ? (lessonBusy() ? "lektionen" : "start") : g === "mehr" ? "einstellungen" : (lastIn[g] || GROUPS[g][0]);
 }));
-$("#subnav").addEventListener("click", e => { const a = e.target.closest("a"); if (a && a.dataset.v === curView){ e.preventDefault(); backToOverview(); } });
+$("#subnav").addEventListener("click", e => { const a = e.target.closest("a"); if (a && a.dataset.v === curView){ e.preventDefault(); if (a.dataset.v === "lektionen") pathActive = null; backToOverview(); renderPathBar(); } });
 // Auf dem Handy liegt das Hauptmenü als feste Leiste am unteren Rand (außerhalb der Kopfzeile, sonst hält es dort nicht).
 { const mq = window.matchMedia("(max-width:640px)"), nav = $("#nav"), home = nav.parentNode;
   const place = () => { if (mq.matches) document.body.appendChild(nav); else home.appendChild(nav); };
@@ -2538,35 +2541,62 @@ function renderPath(){
   const us = units(), nx = pathNext(), aim = AIM_UNITS[S.settings.aim] || [];
   const openN = nx ? nx.u.n : 0;
   $("#path").innerHTML = `<div class="row" style="justify-content:space-between;margin-top:18px"><h2 style="margin:0">Lernpfad</h2><span class="small muted">${us.length} Einheiten · jede Lektion ist frei anwählbar</span></div>` +
-    us.map(u => { const st = unitSteps(u), dn = st.filter(x => x.done).length, all = dn === st.length;
+    us.map(u => { const st = unitSteps(u), dn = st.filter(x => x.done).length, all = dn === st.length, ls = st.filter(x => x.type === "lesson"), xs = st.filter(x => x.type !== "lesson"), ld = ls.filter(x => x.done).length, xd = xs.filter(x => x.done).length;
       return `${STUFEN[u.n] ? `<h3 class="stufe">${STUFEN[u.n]}</h3>` : ""}
       <details class="card unit ${all ? "udone" : ""}" data-unit="${u.n}" ${u.n === openN ? "open" : ""}>
         <summary><span class="uic">${all ? "✅" : u.ic}</span>
-          <span style="flex:1;min-width:0"><b>Einheit ${u.n}: ${esc(u.t)}</b>${aim.includes(u.n) ? `<span class="aimtag">🎯 passt zu deinem Ziel</span>` : ""}
+          <span style="flex:1;min-width:0"><b>Einheit ${u.n}: ${esc(u.t)}</b> <span class="small muted" style="white-space:nowrap">(${ls.length} Lektionen)</span>${aim.includes(u.n) ? `<span class="aimtag">🎯 passt zu deinem Ziel</span>` : ""}
             <span class="small muted" style="display:block">${esc(u.sub)}</span>
             <span class="progress" style="display:block;margin-top:6px"><i style="width:${100 * dn / st.length}%"></i></span></span>
-          <span class="small muted" style="white-space:nowrap;text-align:right">${dn} von ${st.length}<br>Schritten</span><span class="chev">›</span></summary>
-        <div class="usteps">${st.map((x, k) => { const isNext = nx && nx.u.n === u.n && nx.k === k;
+          <span class="small muted" style="white-space:nowrap;text-align:right"><b>${ld} von ${ls.length}</b> Lektionen<br>${xd} von ${xs.length} Zusätzen</span><span class="chev">›</span></summary>
+        <div class="usteps"><p class="small muted uhint">Fett: die ${ls.length} Lektionen. Eingerückt: Zusätze dazwischen (Merkzettel, Schrift, Satzbau, Hören, Test) – empfohlen, aber du kannst sie überspringen.</p>${st.map((x, k) => { const isNext = nx && nx.u.n === u.n && nx.k === k;
           return `<button class="pstep ${x.type === "lesson" ? "main" : "sub"} ${x.done ? "done" : isNext ? "next" : x.part ? "part" : ""}" data-ps="${u.n}:${k}"><span class="pst">${x.done ? "✓" : isNext ? "▶" : x.part ? "…" : ""}</span><span class="pic">${x.ic}</span>
             <span class="plab"><b>${esc(x.label)}</b><small>${esc(x.hint)}${x.part && !x.done && x.type !== "review" ? " · angefangen" : ""}</small></span>${isNext ? `<span class="pgo">Starten ›</span>` : ""}</button>`; }).join("")}</div>
       </details>`; }).join("");
   $("#path").querySelectorAll("[data-ps]").forEach(b => b.onclick = () => { const [n, k] = b.dataset.ps.split(":").map(Number); const u = units()[n - 1]; goStep(u, unitSteps(u)[k]); });
 }
 // Leiste über einer Übung, die aus dem Lernpfad gestartet wurde: zeigt den Schritt und führt nach Abschluss zum nächsten.
+// Nächste Lektion nach einem Schritt – zum Überspringen der Zusatzschritte
+function nextLessonStep(uN, type, id){
+  const flat = []; units().forEach(u => unitSteps(u).forEach(s => flat.push({u, s})));
+  const i = flat.findIndex(x => x.u.n === uN && x.s.type === type && String(x.s.id) === String(id));
+  return i < 0 ? null : flat.slice(i + 1).find(x => x.s.type === "lesson") || null;
+}
+function pathHop(t){ if (!t) return; stopAllSound(); userNavAt = Date.now(); if (t.s.type === "note" || t.s.type === "review") location.hash = "start"; setTimeout(() => goStep(t.u, t.s), 40); }
+const shortStep = s => s.type === "lesson" ? "Lektion " + s.id : s.label;
+// Weiter-Knöpfe für den Abschlussbildschirm eines Schritts, der aus dem Lernpfad gestartet wurde
+function pathContHTML(){
+  if (!pathActive) return "";
+  const nx = stepNeighbor(pathActive.u, pathActive.type, pathActive.id, 1); if (!nx) return "";
+  const sk = nx.s.type !== "lesson" ? nextLessonStep(pathActive.u, pathActive.type, pathActive.id) : null;
+  return `<div class="row pathcont"><span class="small muted pclab">Wie geht es im Lernpfad weiter?</span>
+    <button class="primary" data-pc="next">Weiter: ${esc(nx.s.label)} →</button>${sk ? `<button data-pc="skip" title="Den Zusatzschritt auslassen">Überspringen – gleich zu ${esc(shortStep(sk.s))} →</button>` : ""}<button class="ghost" data-pc="home">Zum Lernpfad</button></div>`;
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("[data-pc]"); if (!b || !pathActive) return;
+  const k = b.dataset.pc, a = pathActive;
+  if (k === "home"){ stopAllSound(); location.hash = "start"; return; }
+  pathHop(k === "skip" ? nextLessonStep(a.u, a.type, a.id) : stepNeighbor(a.u, a.type, a.id, 1));
+});
 function renderPathBar(){
   const el = $("#pathBar"); if (!el) return;
-  if (!pathActive || curView !== "lektionen"){ if (!el.classList.contains("hidden")){ el.classList.add("hidden"); el.dataset.sig = ""; } return; }
+  // Im Lernpfad heißen die Zurück-Knöpfe der Übungen „Beenden“, damit sie nicht mit „Schritt zurück“ verwechselt werden
+  const inPath = !!pathActive && curView === "lektionen";
+  document.querySelectorAll("#subnav a").forEach(x => { if (x.dataset.v === "start" || x.dataset.v === "lektionen") x.classList.toggle("on", inPath ? x.dataset.v === "start" : x.dataset.v === curView); });
+  [["#lkBack","← Übersicht"],["#dlBack","← Übersicht"],["#sbBack","← Übersicht"],["#vwBack","← Übersicht"]].forEach(([q, t]) => { const x = $(q); if (!x) return; const w = inPath ? "✕ Beenden" : t; if (x.textContent !== w){ x.textContent = w; x.title = inPath ? "Übung verlassen und zurück zum Lernpfad" : "Zurück zur Übersicht"; } });
+  if (!inPath){ if (!el.classList.contains("hidden")){ el.classList.add("hidden"); el.dataset.sig = ""; } return; }
   const u = units()[pathActive.u - 1], s = u && unitSteps(u).find(x => x.type === pathActive.type && x.id === pathActive.id);
   if (!s){ el.classList.add("hidden"); return; }
   const nx = stepNeighbor(u.n, s.type, s.id, 1), pv = stepNeighbor(u.n, s.type, s.id, -1), sig = [u.n, s.type, s.id, s.done].join("|");
+  const sk = nx && nx.s.type !== "lesson" ? nextLessonStep(u.n, s.type, s.id) : null;
   if (el.dataset.sig === sig && !el.classList.contains("hidden")) return;
   el.dataset.sig = sig; el.classList.remove("hidden");
   el.innerHTML = `<span class="small"><b>🧭 Lernpfad</b> · Einheit ${u.n} · ${esc(s.label)}</span>${s.done ? `<span class="small" style="color:var(--good);font-weight:600">✓ erledigt</span>` : ""}
-    <span style="margin-left:auto" class="row"><button class="ghost small" id="pbHome">Zum Lernpfad</button>${pv ? `<button class="small" id="pbPrev" title="Zurück zu: ${esc(pv.s.label)}">← Schritt zurück</button>` : ""}${nx ? `<button class="${s.done ? "primary" : ""} small" id="pbNext" title="Zum nächsten Schritt im Lernpfad">Weiter: ${esc(nx.s.label)} →</button>` : ""}</span>`;
+    <span style="margin-left:auto" class="row"><button class="ghost small" id="pbHome">Zum Lernpfad</button>${pv ? `<button class="small" id="pbPrev" title="Zurück zu: ${esc(pv.s.label)}">← Schritt zurück</button>` : ""}${sk ? `<button class="small" id="pbSkip" title="Den Zusatzschritt „${esc(nx.s.label)}“ auslassen">Überspringen: ${esc(shortStep(sk.s))} →</button>` : ""}${nx ? `<button class="pbnext ${s.done ? "primary" : ""} small" id="pbNext" title="Zum nächsten Schritt im Lernpfad">Weiter: ${esc(nx.s.label)} →</button>` : ""}</span>`;
   $("#pbHome").onclick = () => { location.hash = "start"; };
-  const hop = t => () => { stopAllSound(); userNavAt = Date.now(); if (t.s.type === "note" || t.s.type === "review") location.hash = "start"; setTimeout(() => goStep(t.u, t.s), 40); };
-  const nb = $("#pbNext"); if (nb) nb.onclick = hop(nx);
-  const pb = $("#pbPrev"); if (pb) pb.onclick = hop(pv);
+  const nb = $("#pbNext"); if (nb) nb.onclick = () => pathHop(nx);
+  const pb = $("#pbPrev"); if (pb) pb.onclick = () => pathHop(pv);
+  const sb = $("#pbSkip"); if (sb) sb.onclick = () => pathHop(sk);
 }
 setInterval(renderPathBar, 700);
 document.addEventListener("click", e => { if (pathActive && e.target.closest && e.target.closest("#lkBack,#dlBack,#sbBack,#vwBack")) setTimeout(() => { location.hash = "start"; }, 0); });
@@ -4064,9 +4094,9 @@ function renderScript(){
   const nx = nextScript();
   c.innerHTML = `<div class="fc" style="min-height:0"><div class="big">✍️</div><div class="mid">Schrift ${L.id} geschafft – ${sk.right} von ${sk.qs.length} richtig</div>
     <p class="muted">Die Lesewörter kommen ins Kartendeck „Meine Schrift“.</p></div>
-    <div class="row" style="justify-content:center;margin-top:10px"><button id="skRepeat">Wiederholen</button>${nx?`<button class="primary" id="skNextL">Nächste: ${esc(nx.title)} →</button>`:""}<button id="skAlpha">Alphabet-Tabelle</button></div>`;
+    <div class="row" style="justify-content:center;margin-top:10px"><button id="skRepeat">Wiederholen</button>${nx && !pathActive?`<button class="primary" id="skNextL">Nächste: ${esc(nx.title)} →</button>`:""}<button id="skAlpha">Alphabet-Tabelle</button></div>${pathContHTML()}`;
   $("#skRepeat").onclick = () => startScript(L.id);
-  if (nx) $("#skNextL").onclick = () => startScript(nx.id);
+  if ($("#skNextL")) $("#skNextL").onclick = () => startScript(nx.id);
   $("#skAlpha").onclick = () => { $("#lkRun").classList.add("hidden"); $("#lkList").classList.remove("hidden"); setSub("alpha"); };
 }
 function scriptDeck(){
@@ -4292,7 +4322,7 @@ function renderLesson(){
       <div class="row" style="justify-content:center;margin-top:10px">
         <button id="lkWords" class="primary">🧩 Wort für Wort</button><button id="lkSlow">🐢 Ganz langsam</button><button id="lkNormal">🔊 Normal</button><button id="lkSay">🎤 Nachsprechen</button></div>
       <div class="row" style="justify-content:space-between;margin-top:10px">
-        <button id="lkPrev" ${lk.i?"":"disabled"}>← Zurück</button>
+        <button id="lkPrev" ${lk.i?"":"disabled"}>← Voriger Satz</button>
         <span class="small muted">Hör dir den Satz 3-mal an und sprich ihn laut nach.</span>
         <button class="primary" id="lkNext">${lk.i < n-1 ? "Nächster Satz →" : "Zur Wiederholung →"}</button></div>
       <div id="lkSayRes" class="small" style="text-align:center;margin-top:8px"></div>`;
@@ -4405,13 +4435,13 @@ function renderLesson(){
     <p class="muted">Die Sätze sind jetzt im Kartendeck „Meine Lektionen“ und kommen zur Wiederholung zurück.</p></div>
     ${kniggeHTML(lk.l.id, false)}
     <div class="row" style="justify-content:center;margin-top:10px">
-      <button class="primary" id="lkTalk">💬 Kurzes Gespräch mit dem Tutor</button>
+      <button class="${pathActive ? "" : "primary"}" id="lkTalk">💬 Kurzes Gespräch mit dem Tutor</button>
       <button id="lkRepeat">Lektion wiederholen</button>
-      ${nx?`<button id="lkNextL">Nächste: ${esc(nx.title)} →</button>`:""}</div>`;
+      ${nx && !pathActive?`<button id="lkNextL">Nächste: ${esc(nx.title)} →</button>`:""}</div>${pathContHTML()}`;
   $("#lkTalk").onclick = () => startLessonTalk(lk.l);
   renderSide();
   $("#lkRepeat").onclick = () => startLesson(lk.l.id);
-  if (nx) $("#lkNextL").onclick = () => startLesson(nx.id);
+  if ($("#lkNextL")) $("#lkNextL").onclick = () => startLesson(nx.id);
 }
 let curSub = "speak";
 
