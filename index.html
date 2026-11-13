@@ -725,7 +725,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "4.2";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "4.6";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -1272,7 +1272,8 @@ function mkUtter(text, rate){
 // Ein Muttersprachler spricht Sätze und Wörter ein; die App spielt dann die Aufnahme statt der Computerstimme.
 // Gespeichert in der Browser-Datenbank (IndexedDB) dieses Geräts; Export/Import als Datei.
 const recKeys = new Set(); let recDB = null, curAudio = null;
-const recKey = t => String(t || "").replace(/\s+/g, "").trim();
+const recForm = () => S.settings.gender === "f" ? "f" : "m";
+const recKey = t => { const k = String(t || "").replace(/\s+/g, "").trim(); return k && recForm() === "f" ? "f|" + k : k; };
 function recOpen(){
   return new Promise(res => { try { const r = indexedDB.open("thai-audio", 1);
     r.onupgradeneeded = () => r.result.createObjectStore("rec");
@@ -1291,8 +1292,8 @@ function playRec(text, rate, onStart, onEnd){
   recGet(text).then(blob => {
     if (!blob){ onEnd && onEnd(); return; }
     const url = URL.createObjectURL(blob), a = new Audio(url); curAudio = a;
-    a.playbackRate = (rate && rate <= S.settings.slowRate + 0.01) ? 0.8 : 1; a.preservesPitch = true;
-    let done = false; const fin = () => { if (done) return; done = true; URL.revokeObjectURL(url); onEnd && onEnd(); };
+    a.playbackRate = Math.max(0.5, Math.min(1.25, rate || 1)); a.preservesPitch = true;
+    let done = false; const fin = () => { if (done) return; done = true; if (curAudio === a) curAudio = null; URL.revokeObjectURL(url); onEnd && onEnd(); };
     a.onplay = () => onStart && onStart(); a.onended = fin; a.onerror = fin; a.onpause = () => { if (!a.ended) fin(); };
     a.play().catch(fin);
   }, () => onEnd && onEnd());
@@ -1305,21 +1306,134 @@ function studioItems(lid){
   l.items.forEach(it => lessonItem(it).words.forEach(w => { if (w[0] && !/[{a-z]/i.test(w[0]) && !seen.has(recKey(w[0]))){ seen.add(recKey(w[0])); out.push({th: w[0], de: w[2], kind: "Wort"}); } }));
   return out;
 }
+// ---- Tonpakete: fertige Tondateien, die mit der Web-App ausgeliefert werden (Ordner „ton“ neben index.html) ----
+// Je Einheit eine Datei; die App holt sie, sobald man die Einheit öffnet, und legt die Tondateien im Browser ab.
+const TON = {idx: null, busy: {}, done: (() => { try { return JSON.parse(localStorage.getItem("thai_ton") || "{}"); } catch(e){ return {}; } })()};
+async function tonInit(){
+  if (location.protocol === "file:") return;
+  try { const r = await fetch("ton/index.json", {cache: "no-cache"}); if (!r.ok) return; const j = await r.json(); if (j.app !== "thai-lernraum-ton" || !Array.isArray(j.packs)) return;
+    await recReady; TON.idx = j; let u = 1; try { const nx = pathNext(); if (nx) u = nx.u.n; } catch(e){} tonLoad(u); } catch(e){}
+}
+async function tonLoad(uN){
+  const ix = TON.idx; if (!ix || !recDB) return 0; const form = recForm(), p = ix.packs.find(x => x.u === uN && (x.form || "m") === form), id = form + uN;
+  if (!p || TON.done[id] === ix.v || TON.busy[id]) return 0;
+  TON.busy[id] = true; let n = 0;
+  try { const r = await fetch("ton/" + p.file, {cache: "no-cache"}); if (!r.ok) throw new Error("fehlt"); const j = await r.json(), renew = !!TON.done[id];
+    for (const k in j.rec){ if (recKeys.has(k) && !renew) continue; const blob = await (await fetch(j.rec[k])).blob(); await recTx("readwrite", s => s.put(blob, k)); recKeys.add(k); n++; }
+    TON.done[id] = ix.v; try { localStorage.setItem("thai_ton", JSON.stringify(TON.done)); } catch(e){}
+  } catch(e){}
+  TON.busy[id] = false; return n;
+}
+setTimeout(tonInit, 1200);
+// ZIP ohne Kompression (MP3 ist schon komprimiert) – damit das Tonpaket als eine Datei heruntergeladen werden kann
+function zipStore(files){
+  const T = zipStore.T || (zipStore.T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })());
+  const crc = a => { let c = 0xFFFFFFFF; for (let i = 0; i < a.length; i++) c = T[(c ^ a[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const enc = new TextEncoder(), parts = [], cd = []; let off = 0;
+  files.forEach(f => { const name = enc.encode(f.name), data = f.data, c = crc(data);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, c, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    const d = new DataView(new ArrayBuffer(46)); d.setUint32(0, 0x02014b50, true); d.setUint16(4, 20, true); d.setUint16(6, 20, true); d.setUint16(8, 0x0800, true); d.setUint16(10, 0, true); d.setUint16(12, 0, true); d.setUint16(14, 0x21, true);
+    d.setUint32(16, c, true); d.setUint32(20, data.length, true); d.setUint32(24, data.length, true); d.setUint16(28, name.length, true); d.setUint32(42, off, true);
+    parts.push(h.buffer, name, data); cd.push(d.buffer, name); off += 30 + name.length + data.length; });
+  const cdSize = cd.reduce((n, x) => n + (x.byteLength || x.length), 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cdSize, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cd, e.buffer], {type: "application/zip"});
+}
+async function tonPackBuild(){
+  const enc = new TextEncoder(), files = [], packs = [], cnt = {m: 0, f: 0}, was = S.settings.gender;
+  const url = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); });
+  try {
+    for (const form of ["m", "f"]){ S.settings.gender = form; const seen = new Set();   // Form nur vorübergehend umstellen, nicht speichern
+      for (const u of units()){ const rec = {}; let n = 0;
+        for (const l of u.ls) for (const it of studioItems(l.id)){ const k = recKey(it.th); if (!k || seen.has(k) || /[a-z{}]/i.test(it.th) || !recKeys.has(k)) continue; seen.add(k);
+          const blob = await recTx("readonly", s => s.get(k)); if (!blob) continue; rec[k] = await url(blob); n++; }
+        if (!n) continue; const file = (form === "f" ? "f" : "e") + String(u.n).padStart(2, "0") + ".json";
+        files.push({name: "ton/" + file, data: enc.encode(JSON.stringify({v: 1, form, rec}))}); packs.push({u: u.n, form, file, n}); cnt[form] += n; } }
+  } finally { S.settings.gender = was; }
+  if (!packs.length) return null;
+  files.unshift({name: "ton/index.json", data: enc.encode(JSON.stringify({app: "thai-lernraum-ton", v: Date.now(), quelle: "computererzeugt", packs}))});
+  return {blob: zipStore(files), total: cnt.m + cnt.f, m: cnt.m, f: cnt.f, packs: packs.length};
+}
+// ---- Tondateien mit Google Cloud Text-to-Speech erzeugen (Schlüssel nur im Arbeitsspeicher) ----
+const gen = {key: "", voices: [], voice: "", from: 0, to: 0, over: false, run: false, stop: false, msg: "", open: false};
+const GEN_URL = "https://texttospeech.googleapis.com/v1/";
+async function genCall(path, body){
+  const opt = body ? {method: "POST", headers: {"Content-Type": "application/json", "X-Goog-Api-Key": gen.key}, body: JSON.stringify(body)} : {headers: {"X-Goog-Api-Key": gen.key}};
+  let r;
+  try { r = await fetch(GEN_URL + path, opt); }
+  catch(e){ throw new Error("Google ist von hier nicht erreichbar (" + (e.message || e) + "). Auf claude.ai ist der Zugriff gesperrt – bitte die App über localhost oder die Web-App öffnen."); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ const err = new Error((j.error && j.error.message) || ("Fehler " + r.status)); err.status = r.status; throw err; }
+  return j;
+}
+function genBlob(b64){ const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], {type: "audio/mpeg"}); }
+async function genSynth(text){
+  for (let n = 0; ; n++){
+    try { const j = await genCall("text:synthesize", {input: {text}, voice: {languageCode: "th-TH", name: gen.voice}, audioConfig: {audioEncoding: "MP3"}}); if (!j.audioContent) throw new Error("leere Antwort"); return genBlob(j.audioContent); }
+    catch(e){ if ((e.status === 429 || e.status === 503) && n < 4){ await new Promise(r => setTimeout(r, 4000 * (n + 1))); continue; } throw e; }
+  }
+}
+function genList(){
+  const a = Math.max(1, Math.min(gen.from, gen.to)), b = Math.min(LESSONS.length, Math.max(gen.from, gen.to)), seen = new Set(), out = [];
+  for (let id = a; id <= b; id++) studioItems(id).forEach(it => { const k = recKey(it.th); if (!k || seen.has(k) || /[{}]/.test(it.th)) return; seen.add(k); if (gen.over || !recKeys.has(k)) out.push(it.th); });
+  return out;
+}
+function genBind(box){
+  const q = id => box.querySelector(id), read = () => { gen.key = q("#gnKey").value.trim(); gen.voice = q("#gnVoice").value; gen.from = +q("#gnFrom").value || 1; gen.to = +q("#gnTo").value || gen.from; gen.over = q("#gnOver").checked; };
+  const say = (t, bad) => { gen.msg = t; const m = q("#gnMsg"); if (m){ m.textContent = t; m.style.color = bad ? "var(--bad)" : ""; } };
+  const info = () => { read(); const l = genList(); q("#gnInfo").textContent = `${l.length} Tondateien, ${l.reduce((n, t) => n + t.length, 0)} Zeichen`; };
+  q("#stGen").ontoggle = e => { gen.open = e.target.open; };
+  q("#gnForm").onchange = e => { read(); S.settings.gender = e.target.value; saveSettings(); const sg = $("#setGender"); if (sg) sg.value = S.settings.gender;
+    const want = S.settings.gender === "f" ? "FEMALE" : "MALE", cur = gen.voices.find(v => v.name === gen.voice);
+    if (gen.voices.length && (!cur || cur.ssmlGender !== want)){ const v = gen.voices.find(x => x.ssmlGender === want); if (v) gen.voice = v.name; }
+    gen.msg = `Form: ${S.settings.gender === "f" ? "Frau" : "Mann"}. Bitte die Stimme prüfen und mit „Probe hören“ testen.`; renderStudio(); };
+  ["#gnFrom", "#gnTo", "#gnOver", "#gnVoice"].forEach(id => q(id).onchange = info); info();
+  q("#gnVoices").onclick = async () => { read(); if (!gen.key) return say("Bitte zuerst den Schlüssel einfügen.", true);
+    say("Lade Stimmen …");
+    try { const j = await genCall("voices?languageCode=th-TH"); gen.voices = (j.voices || []).sort((x, y) => (/Chirp3-HD/.test(y.name) - /Chirp3-HD/.test(x.name)) || x.name.localeCompare(y.name));
+      gen.voice = (gen.voices.find(v => v.name === gen.voice) || gen.voices[0] || {}).name || ""; gen.msg = gen.voices.length ? `${gen.voices.length} Thai-Stimmen gefunden. „Chirp3-HD“ ist die neueste Reihe. Mit „Probe hören“ vergleichen.` : "Keine Thai-Stimmen gefunden."; renderStudio();
+    } catch(e){ say("Stimmen laden fehlgeschlagen: " + e.message, true); } };
+  q("#gnTry").onclick = async () => { read(); const t = (items => items[0] && items[0].th)(studioItems(gen.from)) || "สวัสดีครับ"; say("Erzeuge Probe …");
+    try { const blob = await genSynth(t); stopAllSound(); const url = URL.createObjectURL(blob), a = new Audio(url); curAudio = a; a.onended = a.onerror = () => { if (curAudio === a) curAudio = null; URL.revokeObjectURL(url); }; await a.play(); say("Probe: " + t + " (nicht gespeichert)"); }
+    catch(e){ say("Probe fehlgeschlagen: " + e.message, true); } };
+  q("#gnStop").onclick = () => { gen.stop = true; };
+  q("#gnGo").onclick = async () => { read(); const list = genList(); if (!list.length) return say("Für diese Lektionen ist schon alles vorhanden. Zum Neu-Erzeugen „vorhandene Aufnahmen ersetzen“ ankreuzen.");
+    gen.run = true; gen.stop = false; q("#gnGo").disabled = true; q("#gnTry").disabled = true; q("#gnStop").disabled = false; let n = 0, err = "";
+    for (const t of list){ if (gen.stop) break;
+      try { await recPut(t, await genSynth(t)); n++; say(`${n} von ${list.length} erzeugt … (${t})`); }
+      catch(e){ err = e.message; break; }
+      await new Promise(r => setTimeout(r, 120)); }
+    gen.run = false; gen.msg = err ? `Abgebrochen nach ${n} von ${list.length}: ${err}` : gen.stop ? `Angehalten: ${n} von ${list.length} erzeugt.` : `Fertig: ${n} Tondateien erzeugt und gespeichert. Mit „Aufnahmen als Datei sichern“ kannst du sie auf andere Geräte übertragen.`;
+    renderStudio(); if (err){ const m = $("#gnMsg"); if (m) m.style.color = "var(--bad)"; } };
+}
 function renderStudio(){
   const box = $("#studio"); if (!box) return;
   const lid = +(box.dataset.l || 1), items = studioItems(lid);
   const total = LESSONS.reduce((n, l) => n + l.items.length, 0), have = LESSONS.reduce((n, l) => n + l.items.filter(it => recKeys.has(recKey(lessonItem(it).th))).length, 0);
-  box.innerHTML = `<p class="small muted">Hier kann ein Muttersprachler die Sätze und Wörter einsprechen. Wo es eine Aufnahme gibt, spielt die App sie statt der Computerstimme – überall: Lektionen, Karteikarten, Dialoge. Aufgenommen wird die Form, die gerade angezeigt wird (Einstellung Mann/Frau: ครับ oder ค่ะ).</p>
+  box.innerHTML = `<p class="small muted">Hier kann ein Muttersprachler die Sätze und Wörter einsprechen. Wo es eine Aufnahme gibt, spielt die App sie statt der Computerstimme – überall: Lektionen, Karteikarten, Dialoge. Aufgenommen wird die Form, die gerade eingestellt ist (Mann: ครับ, Frau: ค่ะ). Beide Formen haben getrennte Aufnahmen – auch bei Wörtern, die in beiden gleich sind, damit sich die Stimmen nicht mischen.</p>
     <div class="row"><b>${have} von ${total} Sätzen aufgenommen</b> · ${recKeys.size} Aufnahmen insgesamt
       <label class="row small"><input type="checkbox" id="stUse" ${S.settings.useRec === false ? "" : "checked"}> Aufnahmen benutzen</label></div>
     <div class="row" style="margin-top:6px">Lektion: <select id="stLesson" style="width:auto">${LESSONS.map(l => `<option value="${l.id}" ${l.id === lid ? "selected" : ""}>${l.id}. ${esc(l.title)} (${l.items.filter(it => recKeys.has(recKey(lessonItem(it).th))).length}/${l.items.length})</option>`).join("")}</select>
-      <button id="stExport" ${recKeys.size ? "" : "disabled"}>⬇ Aufnahmen als Datei sichern</button><label class="row"><button id="stImportBtn">⬆ Aufnahmen-Datei laden</button><input type="file" id="stImport" accept=".json" class="hidden"></label></div>
+      <button id="stExport" ${recKeys.size ? "" : "disabled"}>⬇ Aufnahmen als Datei sichern</button><button id="stPack" ${recKeys.size ? "" : "disabled"} title="Erzeugt den Ordner „ton“ für GitHub – damit hören alle Nutzer der Web-App diese Tondateien">📦 Tonpaket für die Web-App</button><label class="row"><button id="stImportBtn">⬆ Aufnahmen-Datei laden</button><input type="file" id="stImport" accept=".json" class="hidden"></label></div>
+    <details id="stGen" ${gen.open ? "open" : ""} style="margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:8px 12px"><summary><b>🤖 Tondateien mit Google erzeugen</b> <span class="small muted">(Google Cloud Text-to-Speech, eigener Schlüssel nötig)</span></summary>
+      <p class="small muted">Eine Google-Stimme spricht Sätze und Einzelwörter einmal ein; die Dateien werden hier im Browser gespeichert und danach ohne Google abgespielt. Der Schlüssel bleibt nur bis zum Schließen der Seite im Arbeitsspeicher – er wird nicht gespeichert und landet in keiner Sicherung. Die Stimme ist computererzeugt.</p>
+      <div class="row"><input type="password" id="gnKey" placeholder="Google-API-Schlüssel einfügen" autocomplete="off" style="flex:1;min-width:220px" value="${esc(gen.key)}"><button id="gnVoices">Stimmen laden</button></div>
+      <div class="row" style="margin-top:6px">Form: <select id="gnForm" style="width:auto" ${gen.run ? "disabled" : ""}><option value="m" ${recForm() === "m" ? "selected" : ""}>Mann – ผม / ครับ (Männerstimme wählen)</option><option value="f" ${recForm() === "f" ? "selected" : ""}>Frau – ฉัน / ค่ะ (Frauenstimme wählen)</option></select>
+        <span class="small muted">Das ist dieselbe Einstellung wie „Ich bin …“ oben. Beide Formen werden getrennt gespeichert.</span></div>
+      <div class="row" style="margin-top:6px">Stimme: <select id="gnVoice" style="width:auto;max-width:100%">${gen.voices.length ? gen.voices.map(v => `<option value="${esc(v.name)}" ${v.name === gen.voice ? "selected" : ""}>${esc(v.name.replace(/^th-TH-/, ""))} · ${v.ssmlGender === "FEMALE" ? "Frau" : v.ssmlGender === "MALE" ? "Mann" : ""}</option>`).join("") : `<option value="">erst „Stimmen laden“</option>`}</select>
+        <button id="gnTry" ${gen.voices.length && !gen.run ? "" : "disabled"}>▶ Probe hören</button></div>
+      <div class="row" style="margin-top:6px">Lektionen von <input type="number" id="gnFrom" min="1" max="${LESSONS.length}" value="${gen.from || lid}" style="width:70px"> bis <input type="number" id="gnTo" min="1" max="${LESSONS.length}" value="${gen.to || lid}" style="width:70px">
+        <label class="row small"><input type="checkbox" id="gnOver" ${gen.over ? "checked" : ""}> vorhandene Aufnahmen ersetzen</label></div>
+      <div class="row" style="margin-top:6px"><button class="primary" id="gnGo" ${gen.voices.length && !gen.run ? "" : "disabled"}>Erzeugen</button><button id="gnStop" ${gen.run ? "" : "disabled"}>Abbrechen</button><span id="gnInfo" class="small muted"></span></div>
+      <div id="gnMsg" class="small" style="margin-top:6px">${esc(gen.msg)}</div></details>
     <table class="wbw" style="margin-top:8px">${items.map((it, k) => { const has = recKeys.has(recKey(it.th));
       return `<tr><td class="small muted">${it.kind}</td><td class="th" style="font-size:20px">${esc(it.th)}</td><td class="small">${esc(it.de)}</td>
         <td style="white-space:nowrap"><button data-rec="${k}" class="${recState && recState.k === k ? "primary" : ""}">${recState && recState.k === k ? "⏹ Stopp" : "⏺ Aufnehmen"}</button>
         <button class="ghost" data-recplay="${k}" ${has ? "" : "disabled"}>▶</button><button class="ghost" data-tts="${k}" title="Computerstimme zum Vergleich">🤖</button><button class="ghost" data-recdel="${k}" ${has ? "" : "disabled"}>🗑</button>${has ? " ✓" : ""}</td></tr>`; }).join("")}</table>
     <div id="stMsg" class="small muted"></div>`;
   $("#stUse").onchange = e => { S.settings.useRec = e.target.checked; saveSettings(); };
+  genBind(box);
   $("#stLesson").onchange = e => { box.dataset.l = e.target.value; renderStudio(); };
   box.querySelectorAll("[data-recplay]").forEach(b => b.onclick = () => { stopAudio(); const u = S.settings.useRec; S.settings.useRec = true; playRec(items[+b.dataset.recplay].th, 1); S.settings.useRec = u; });
   box.querySelectorAll("[data-tts]").forEach(b => b.onclick = () => { const u = S.settings.useRec; S.settings.useRec = false; speak(items[+b.dataset.tts].th, S.settings.slowRate); S.settings.useRec = u; });
@@ -1342,6 +1456,11 @@ function renderStudio(){
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], {type: "application/json"})); a.download = "thai-aufnahmen.json"; a.click();
     $("#stMsg").textContent = `${Object.keys(out.rec).length} Aufnahmen gesichert (Datei „thai-aufnahmen.json“ im Download-Ordner).`;
   };
+  $("#stPack").onclick = async () => { $("#stMsg").textContent = "Tonpaket wird gebaut …";
+    try { const r = await tonPackBuild(); if (!r){ $("#stMsg").textContent = "Keine passenden Tondateien vorhanden."; return; }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(r.blob); a.download = "thai-ton.zip"; a.click();
+      $("#stMsg").textContent = `Tonpaket gebaut: ${r.m} Tondateien für die Männerform, ${r.f} für die Frauenform, zusammen ${r.packs} Dateien (${(r.blob.size / 1048576).toFixed(1)} MB). Datei „thai-ton.zip“ im Download-Ordner entpacken und den Ordner „ton“ neben index.html auf GitHub hochladen. Sätze mit deinem Namen sind nicht enthalten.`;
+    } catch(e){ $("#stMsg").textContent = "Tonpaket fehlgeschlagen: " + (e.message || e); } };
   $("#stImportBtn").onclick = () => $("#stImport").click();
   $("#stImport").onchange = async e => { const f = e.target.files[0]; if (!f) return;
     try { const j = JSON.parse(await f.text()); if (j.app !== "thai-lernraum-audio") throw new Error("keine Aufnahmen-Datei");
@@ -2560,7 +2679,7 @@ function stepNeighbor(uN, type, id, dir){
   const i = flat.findIndex(x => x.u.n === uN && x.s.type === type && String(x.s.id) === String(id));
   return i < 0 ? null : flat[i + (dir || 1)] || null;
 }
-function goStep(u, s){
+function goStep(u, s){ tonLoad(u.n);
   if (s.type === "note"){ pathActive = null; return showNote(u.n); }
   if (s.type === "review"){ pathActive = null; return startUnitTest(u.n); }
   pathActive = {u: u.n, type: s.type, id: s.id};
@@ -4252,7 +4371,7 @@ function renderLessonList(){
   $("#lkGrid").querySelectorAll("[data-lk]").forEach(b => b.onclick = () => startLesson(+b.dataset.lk));
 }
 let lk = null;
-function startLesson(id, opts){ lkParked = false;
+function startLesson(id, opts){ lkParked = false; tonLoad(Math.ceil(id / 5));
   const l = LESSONS.find(x => x.id === id); if (!l) return;
   if (id === 3 && !(S.settings.name||"").trim()){
     $("#lkList").classList.add("hidden"); $("#lkRun").classList.remove("hidden");
@@ -5440,7 +5559,7 @@ function loadSettingsUI(){
   renderKeyStatus();
 }
 loadSettingsUI();
-$("#setGender").onchange = e => { S.settings.gender = e.target.value; saveSettings(); };
+$("#setGender").onchange = e => { S.settings.gender = e.target.value; saveSettings(); if ($("#studioWrap").open) renderStudio(); try { const nx = pathNext(); tonLoad(nx ? nx.u.n : 1); } catch(e){} };
 $("#setScript").onchange = e => { S.settings.script = e.target.checked; saveSettings(); };
 $("#setRom").onchange = e => { S.settings.rom = e.target.value; saveSettings(); applyRomMode(); };
 $("#setTtsMode").onchange = e => { S.settings.ttsMode = e.target.value; saveSettings(); speak("ใช่ครับ", S.settings.slowRate); };

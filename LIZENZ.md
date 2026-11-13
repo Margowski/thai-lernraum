@@ -16,6 +16,10 @@ Anfragen bitte als [Issue](https://github.com/Margowski/thai-lernraum/issues) in
 
 Die App enthält eingebettete Fassungen der Schriften **Noto Sans Thai** und **Noto Sans Thai Looped**, © 2022 The Noto Project Authors (https://github.com/notofonts/thai). Sie stehen unter der SIL Open Font License, Version 1.1. Der Lizenztext liegt in der Datei [OFL.txt](OFL.txt). Die Schriften sind von den oben genannten Bedingungen ausgenommen und dürfen nach den Regeln dieser Lizenz weiterverwendet werden.
 
+## Tondateien
+
+Die Tondateien im Ordner `ton` sind computererzeugt. Sie wurden mit Google Cloud Text-to-Speech hergestellt und sind keine Aufnahmen eines Menschen. Für sie gelten dieselben Bedingungen wie für die Lerninhalte.
+
 ## Haftung
 
-Die App wird ohne Gewähr bereitgestellt. Die Thai-Inhalte sind noch nicht vollständig von Muttersprachlern geprüft; Fehler sind möglich.
+Die App wird ohne Gewähr bereitgestellt. Fehler in den Lerninhalten sind trotz Durchsicht möglich.
