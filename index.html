@@ -120,6 +120,17 @@ table.tones td{padding:7px 8px;border-top:1px solid var(--line);vertical-align:m
 .hidden{display:none!important}
 .info-btn{font-size:17px!important;color:var(--accent)!important;padding:2px 6px!important;font-weight:700}
 .info-box{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:6px 0;font-size:14px;text-align:left;line-height:1.55}
+.lkmain{display:grid;grid-template-columns:minmax(0,1fr) 186px;gap:16px;align-items:start}
+.lkctl{border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:8px}
+.lkctl .ctlh{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.lkctl .ctlg{display:flex;flex-direction:column;gap:8px} .lkctl .ctlg.hear{min-height:142px}
+.lkctl button{width:100%;text-align:left;justify-content:flex-start}
+.lktrans{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+.tbtn{flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;min-width:56px;min-height:48px;justify-content:center;border-radius:999px;padding:8px 16px}
+.tbtn svg{width:22px;height:22px;flex:none} .tbtn .tlab{font-size:13px;font-weight:600}
+@media (min-width:901px){ .tbtn .tlab.opt{display:none} }
+@media (max-width:900px){ .lkmain{grid-template-columns:1fr} .lkctl{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:12px;flex-direction:row;flex-wrap:wrap;justify-content:center} .lkctl .ctlg{display:contents} .lkctl .ctlh{display:none} .lkctl button{width:auto} }
+@media (max-width:640px){ .lktrans .thint{display:none} }
 .lkwrap{display:grid;grid-template-columns:250px 1fr;gap:12px;align-items:start;margin-top:10px}
 #lkSide{margin:0;padding:10px;position:sticky;top:70px;max-height:calc(100vh - 90px);overflow:auto}
 .side-h{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:2px 4px 6px}
@@ -178,6 +189,7 @@ nav a i{font-style:normal;margin-right:5px}
 @media (max-width:640px){ .pstep.sub{width:calc(100% - 22px);margin-left:22px} }
 .pstep .pgo{flex:none;font-size:13px;font-weight:600;color:var(--accent)}
 #pathBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 14px;margin-bottom:10px;border-left:4px solid var(--accent)} #pathBar.hidden{display:none}
+@media (max-width:640px){ #pbHome{display:none} }
 button.pbnext{border:2px solid var(--accent);color:var(--accent);font-weight:650;background:transparent} button.pbnext.primary{color:#fff;background:var(--accent)}
 .pathcont{justify-content:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)} .pathcont .pclab{width:100%;text-align:center}
 .usteps .uhint{padding:2px 6px 8px;margin:0}
@@ -647,10 +659,11 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
       <option value="next">nur wenn ich selbst weiterblättere (empfohlen)</option><option value="always">immer, auch beim Öffnen einer Lektion</option><option value="never">nie – nur auf Knopfdruck</option></select></label>
     <p class="small muted">Laufendes Vorlesen hältst du jederzeit mit dem Knopf „⏹ Stopp“ unten am Bildschirm oder mit der Esc-Taste an.</p>
     <label class="row">Sätze vorlesen: <select id="setTtsMode" style="width:auto">
-      <option value="joined">Wort für Wort zusammengesetzt – jedes Wort korrekt, etwas abgehackt (empfohlen)</option>
+      <option value="comma">in einem Zug, Wörter kurz abgesetzt – deutlich und ohne Wartezeit (empfohlen)</option>
+      <option value="joined">jedes Wort als eigene Ansage – am deutlichsten, aber mit Pausen zwischen den Wörtern</option>
       <option value="space">ganzer Satz mit Wortgrenzen – flüssiger</option>
       <option value="plain">ganzer Satz ohne Hilfe – so wie die Stimme es liest</option></select></label>
-    <p class="small muted">Manche Thai-Stimmen sprechen einzelne Wörter richtig, verschlucken sie aber im ganzen Satz (z. B. ใช่ in ใช่ครับ). „Wort für Wort zusammengesetzt“ lässt die Stimme jedes Wort einzeln sprechen und hängt sie direkt aneinander.</p>
+    <p class="small muted">Manche Thai-Stimmen sprechen einzelne Wörter richtig, verschlucken sie aber im ganzen Satz (z. B. ใช่ in ใช่ครับ). „Kurz abgesetzt“ trennt die Wörter mit einem Komma: Die Stimme setzt jedes Wort neu an, liest aber alles in einem Zug. „Eigene Ansage“ ist noch deutlicher, doch zwischen zwei Ansagen vergeht Zeit – bei Online-Stimmen oft eine halbe bis ganze Sekunde.</p>
     <p class="small muted">„Abbauen“: Wörter, die du an einem früheren Tag schon gelernt hast, zeigen die Umschrift nur noch verschwommen – antippen macht sie lesbar. Neue Wörter bleiben klar. So gewöhnst du dich Schritt für Schritt an die Thai-Schrift.</p>
     <details id="studioWrap"><summary><b>🎙️ Aufnahmestudio – echte Stimme statt Computerstimme</b></summary><div id="studio"></div></details>
     <h3>Tagesziel</h3>
@@ -664,11 +677,11 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
     <p class="small muted">Stimmen mit „Natural“ oder „Online“ im Namen (z. B. in Microsoft Edge) klingen meist deutlich klarer als ältere Systemstimmen.</p>
     <h3>Normales Tempo: <span id="setRateVal"></span></h3>
     <input type="range" id="setRate" min="0.4" max="1.1" step="0.05" style="width:100%">
-    <h3>Langsames Tempo (🐢 und Wort für Wort): <span id="setSlowVal"></span></h3>
+    <h3>Langsames Tempo (Wort für Wort): <span id="setSlowVal"></span></h3>
     <input type="range" id="setSlow" min="0.3" max="0.8" step="0.05" style="width:100%">
     <h3>Pause zwischen den Wörtern (Wort für Wort): <span id="setGapVal"></span></h3>
     <input type="range" id="setGap" min="0" max="1500" step="50" style="width:100%">
-    <p class="small muted">Gilt für „🧩 Wort für Wort“ und das automatische Vorspielen in den Lektionen. Auch bei 0 bleibt eine kurze Pause, weil die Stimme jedes Wort neu ansetzt – die lässt sich nicht abschalten.</p>
+    <p class="small muted">Gilt für „🧩 Wort für Wort“ und das automatische Vorspielen in den Lektionen. <b>Bis 0,30 s</b> liest die Stimme alle Wörter in einem Zug und setzt sie nur kurz ab – das ist die schnellste Art. <b>Darüber</b> wird jedes Wort einzeln angesagt; dann kommt zur eingestellten Pause die Wartezeit der Stimme hinzu. <span id="setVoiceKind"></span></p>
     <label class="row"><input type="checkbox" id="setAutoSpeak"> Antworten des Tutors automatisch vorlesen</label>
     <label class="row"><input type="checkbox" id="setAutoSend"> Nach dem Sprechen automatisch senden</label>
     <h3>Toleranz beim Nachsprechen: <span id="setTolVal"></span> %</h3>
@@ -712,7 +725,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "4.0";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "4.2";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -1237,12 +1250,19 @@ Antworte NUR mit JSON: {"title":"kurzer deutscher Titel","sit":"ein Satz Situati
 
 // Manche Thai-Stimmen zerlegen Sätze ohne Leerzeichen falsch (z. B. ใช่ครับ). Mit Leerzeichen an den
 // bekannten Wortgrenzen liest die Stimme jedes Wort sauber. Unbekannte Teile bleiben unverändert.
-function ttsMode(){ return S.settings.ttsMode || (S.settings.ttsSpace === false ? "plain" : "joined"); }
-function ttsText(text){
-  text = String(text).replace(/…/g, " ");
-  if (ttsMode() === "plain" || !/[\u0E00-\u0E7F]/.test(text)) return text;
-  return text.split(/\s+/).map(ch => { const ws = glossWords(ch); return ws.some(w => w[2] === "?") ? ch : ws.map(w => w[0]).join(" "); }).join(" ");
+// "comma" (Standard seit 4.2): ein Zug, Wörter durch Komma getrennt – deutlich wie einzeln, aber ohne die Wartezeit zwischen einzelnen Ansagen
+function ttsMode(){
+  if (S.settings.ttsMode === "joined" && !S.settings.tts42){ S.settings.ttsMode = "comma"; S.settings.tts42 = true; try { saveSettings(); } catch(e){} }
+  return S.settings.ttsMode || (S.settings.ttsSpace === false ? "plain" : "comma");
 }
+function ttsText(text, sep){
+  text = String(text).replace(/…/g, " ");
+  if ((ttsMode() === "plain" && !sep) || !/[\u0E00-\u0E7F]/.test(text)) return text;
+  sep = sep || (ttsMode() === "comma" ? ", " : " ");
+  return text.split(/\s+/).map(ch => { const ws = glossWords(ch); return ws.some(w => w[2] === "?") ? ch : ws.map(w => w[0]).join(sep); }).join(sep);
+}
+// Online-Stimmen (z. B. „Natural“ in Edge) holen jede Ansage einzeln aus dem Netz – das kostet pro Ansage spürbar Zeit
+const voiceOnline = () => !!thVoice && thVoice.localService === false;
 function mkUtter(text, rate){
   const u = new SpeechSynthesisUtterance(ttsText(text));
   u.lang = "th-TH"; if (thVoice) u.voice = thVoice;
@@ -1340,7 +1360,7 @@ function speak(text, rate, cb){
     if (cb) endActive = cb.onEnd || null;
     if (playRec(text, rate, () => { if (tok === seqToken && cb && cb.onIndex) cb.onIndex(-1); }, () => { if (tok === seqToken) stopHL(); })) return;
     // Modus „zusammengesetzt“: jedes Wort als eigene Äußerung in die Warteschlange – die Stimme spricht es wie einzeln
-    const parts = ttsMode() === "joined" ? ttsText(text).split(/\s+/).filter(Boolean) : [];
+    const parts = ttsMode() === "joined" && !(cb && cb.flow) ? ttsText(text).split(/\s+/).filter(Boolean) : [];
     if (parts.length > 1){
       const us = parts.map(p => mkUtter(p, rate));
       if (cb){ endActive = cb.onEnd || null; us[0].onstart = () => { if (tok === seqToken && cb.onIndex) cb.onIndex(-1); }; }
@@ -1405,6 +1425,24 @@ function speakSeq(parts, rate, gap, cb){
   stopAudio();
   const tok = ++seqToken; stopHL(); endActive = cb && cb.onEnd || null;
   seqRunTok = tok;
+  // Kurze Pause gewünscht (bis 0,3 s): alles in EINER Ansage, Wörter durch Komma getrennt.
+  // Einzelne Ansagen je Wort hätten – vor allem bei Online-Stimmen – zwischen den Wörtern eine Wartezeit, die sich nicht abstellen lässt.
+  const hasRec = S.settings.useRec !== false && list.some(x => recKeys.has(recKey(x[0])));
+  if (list.length > 1 && wordGap(gap) <= 300 && !hasRec){
+    let text = ""; const offs = [];
+    list.forEach(([txt, k], n) => {
+      const multi = /\s/.test(ttsText(txt, " ").trim());
+      if (n) text += multi ? ". " : ", ";
+      offs.push([text.length, k]); text += multi ? ttsText(txt, " ") : txt;
+    });
+    const u = new SpeechSynthesisUtterance(text); u.lang = "th-TH"; if (thVoice) u.voice = thVoice; u.rate = rate || S.settings.slowRate;
+    const fin = () => { if (tok !== seqToken) return; seqRunTok = 0; stopHL(); };
+    u.onboundary = e => { if (tok !== seqToken || typeof e.charIndex !== "number") return; let k = offs[0][1]; for (const o of offs) if (e.charIndex >= o[0]) k = o[1]; cb && cb.onIndex && cb.onIndex(k); };
+    u.onend = fin; u.onerror = fin;
+    setTimeout(fin, 6000 + text.length * 500);            // falls onend ausbleibt
+    try { speechSynthesis.speak(u); } catch(e) {}
+    return;
+  }
   let i = 0;
   const next = () => {
     if (tok !== seqToken) return;
@@ -4266,7 +4304,7 @@ function renderSide(){
     if (["quiz","repeat","speak"].includes(lk.phase)) h += `<p class="small muted">Während ${lk.phase === "quiz" ? "des Quiz" : lk.phase === "repeat" ? "der Wiederholung" : "des Sprechtests"} ausgeblendet – sonst wäre es zu leicht. 😉</p>`;
     else h += lk.items.map((it, i) => i <= max
       ? sideEntry({cls: lk.phase === "learn" && i === lk.i ? "cur" : "", label: (lk.phase !== "learn" || i !== lk.i ? "✓ " : "") + esc(it.de), sub: `<span class="${romCls(it.words)}">${romHTML(it.rom)}</span>`, say: it.th, idx: i})
-      : sideEntry({cls: "future", label: `Satz ${i+1}: ${esc(it.de)}`, sub: `<span class="small muted">kommt noch – „Nächster Satz →“</span>`})).join("");
+      : sideEntry({cls: "future", label: `Satz ${i+1}: ${esc(it.de)}`, sub: `<span class="small muted">kommt noch</span>`})).join("");
     h += earlierLessonsHTML(lk.l.id);
   } else if (sk){
     const max = sk.phase === "learn" ? sk.maxI : sk.steps.length - 1;
@@ -4311,7 +4349,10 @@ function renderLesson(){
     const romC = romCls(it.words);   // vor markSeen bestimmen, sonst gelten neue Wörter sofort als „bekannt“
     markSeen(it.words);
     setStep(`Hören & Nachsprechen · Satz ${lk.i+1} von ${n}`);
-    c.innerHTML = `<div class="fc" style="min-height:0">
+    const last = lk.i >= n-1;
+    const icPrev = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="5" width="2.6" height="14" rx="1"/><path d="M20 5.6v12.8a.8.8 0 0 1-1.25.66L9.2 12.66a.8.8 0 0 1 0-1.32l9.55-6.4A.8.8 0 0 1 20 5.6z"/></svg>`;
+    const icNext = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="17.4" y="5" width="2.6" height="14" rx="1"/><path d="M4 5.6v12.8a.8.8 0 0 0 1.25.66l9.55-6.4a.8.8 0 0 0 0-1.32L5.25 4.94A.8.8 0 0 0 4 5.6z"/></svg>`;
+    c.innerHTML = `<div class="lkmain"><div class="lkbody"><div class="fc" style="min-height:0">
       <div class="mid" style="font-size:22px">${esc(it.de)}</div>
       <div class="big th">${it.words.map((w,k) => `<span data-k="${k}">${esc(/[a-z]/i.test(w[0]) ? " "+w[0]+" " : w[0])}</span>`).join("")}</div>
       <div class="mid ${romC}">${it.words.map((w,k) => `<span data-k="${k}">${romHTML(w[1])}</span>`).join(" ")}</div></div>
@@ -4319,18 +4360,19 @@ function renderLesson(){
       ${ilHTML(it.words)}
       ${it.tip ? `<p class="small" style="margin-top:10px">💡 ${esc(it.tip)}</p>` : ""}
       ${lk.i === 0 ? kniggeHTML(lk.l.id, true) : ""}
-      <div class="row" style="justify-content:center;margin-top:10px">
-        <button id="lkWords" class="primary">🧩 Wort für Wort</button><button id="lkSlow">🐢 Ganz langsam</button><button id="lkNormal">🔊 Normal</button><button id="lkSay">🎤 Nachsprechen</button></div>
-      <div class="row" style="justify-content:space-between;margin-top:10px">
-        <button id="lkPrev" ${lk.i?"":"disabled"}>← Voriger Satz</button>
-        <span class="small muted">Hör dir den Satz 3-mal an und sprich ihn laut nach.</span>
-        <button class="primary" id="lkNext">${lk.i < n-1 ? "Nächster Satz →" : "Zur Wiederholung →"}</button></div>
-      <div id="lkSayRes" class="small" style="text-align:center;margin-top:8px"></div>`;
+      <div id="lkSayRes" class="small" style="text-align:center;margin-top:8px"></div></div>
+      <div class="lkctl"><p class="ctlh">Anhören</p>
+        <div class="ctlg hear"><button id="lkWords" class="primary" title="Jedes Wort einzeln, danach der ganze Satz">🧩 Wort für Wort</button><button id="lkNormal" title="Der ganze Satz am Stück, in normalem Tempo">🔊 Normal</button></div>
+        <p class="ctlh">Selbst sprechen</p>
+        <div class="ctlg"><button id="lkSay" title="Satz nachsprechen und mit der Vorlage vergleichen">🎤 Nachsprechen</button></div></div></div>
+      <div class="lktrans">
+        <button id="lkPrev" class="tbtn" title="Voriger Satz" aria-label="Voriger Satz" ${lk.i?"":"disabled"}>${icPrev}<span class="tlab opt">Voriger</span></button>
+        <span class="small muted" style="text-align:center"><span class="thint">Hör dir den Satz 3-mal an und sprich ihn laut nach. · </span>Satz ${lk.i+1} von ${n}</span>
+        <button class="primary tbtn" id="lkNext" title="${last ? "Zur Wiederholung" : "Nächster Satz"}" aria-label="${last ? "Zur Wiederholung" : "Nächster Satz"}"><span class="tlab ${last ? "" : "opt"}">${last ? "Zur Wiederholung" : "Nächster"}</span>${icNext}</button></div>`;
     const hl = hlCallbacks(c);
     const seqParts = it.words.length > 1 ? it.words.map(w => w[0]).concat([it.th]) : [it.th];
     const seqCb = {onIndex: k => hl.onIndex(k >= it.words.length || it.words.length === 1 ? -1 : k), onEnd: hl.onEnd};
     $("#lkWords").onclick = () => speakSeq(seqParts, S.settings.slowRate, 700, seqCb);
-    $("#lkSlow").onclick = () => speak(it.th, S.settings.slowRate, hl);
     $("#lkNormal").onclick = () => speak(it.th, S.settings.rate, hl);
     $("#lkSay").onclick = () => sayCheck(it.th, it.rom, $("#lkSayRes"), $("#lkSay"), it.words);
     $("#lkPrev").onclick = () => { lk.i--; renderLesson(); };
@@ -5390,6 +5432,7 @@ function fillVoiceSelect(){
 }
 function loadSettingsUI(){
   const s = S.settings;
+  { const vk = $("#setVoiceKind"); if (vk) vk.textContent = !thVoice ? "" : voiceOnline() ? "Deine Stimme ist eine Online-Stimme: Jede einzelne Ansage wird aus dem Netz geholt, das dauert je Wort etwa eine halbe bis ganze Sekunde." : "Deine Stimme ist auf dem Gerät gespeichert und startet ohne Wartezeit."; }
   $("#setGender").value = s.gender; $("#setScript").checked = s.script; $("#setRom").value = s.rom; $("#setNewMax").value = String(s.newMax ?? 10); $("#setTtsMode").value = ttsMode(); $("#setAuto").value = S.settings.autoPlay || "next"; $("#setGoal").value = String(dailyGoal()); $("#setDe").checked = s.de;
   $("#setRate").value = s.rate; $("#setRateVal").textContent = s.rate; $("#setSlow").value = s.slowRate; $("#setSlowVal").textContent = s.slowRate; $("#setGap").value = wordGap(650); $("#setGapVal").textContent = (wordGap(650) / 1000).toFixed(2).replace(".", ",") + " s";
   $("#setLevel").value = s.level; $("#setName").value = s.name || ""; $("#setAutoSpeak").checked = s.autoSpeak; $("#setAutoSend").checked = s.autoSend; $("#setTol").value = s.tol ?? 20; $("#setToneMode").value = s.toneMode || "hint"; $("#setTolVal").textContent = s.tol ?? 20;
