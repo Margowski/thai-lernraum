@@ -172,6 +172,10 @@ nav a i{font-style:normal;margin-right:5px}
 .pstep.part .pst{border-color:var(--accent);color:var(--accent)}
 .pstep.next{background:var(--accent-soft);border-radius:10px;border-top-color:transparent} .pstep.next .pst{border-color:var(--accent);background:var(--accent);color:#fff}
 .pstep.next + .pstep{border-top-color:transparent}
+.pstep.sub{width:calc(100% - 34px);margin-left:34px;min-height:42px;padding-top:6px;padding-bottom:6px}
+.pstep.sub .plab b{font-weight:500;font-size:.93em} .pstep.sub .pic{font-size:17px} .pstep.sub .pst{width:20px;height:20px;font-size:10px}
+.pstep.main .plab b{font-weight:650}
+@media (max-width:640px){ .pstep.sub{width:calc(100% - 22px);margin-left:22px} }
 .pstep .pgo{flex:none;font-size:13px;font-weight:600;color:var(--accent)}
 #pathBar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 14px;margin-bottom:10px} #pathBar.hidden{display:none}
 .exrow .il{justify-content:flex-start} .exrow .lit{text-align:left} .exrow{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
@@ -705,7 +709,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "3.8";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "3.9";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -2509,6 +2513,12 @@ function pathNext(){
   for (const u of units()){ const st = unitSteps(u); for (let k = 0; k < st.length; k++) if (!st[k].done) return {u, s: st[k], k}; }
   return null;
 }
+// Der Schritt, der im Lernpfad auf einen gegebenen Schritt folgt (auch über die Einheitsgrenze hinweg) bzw. ihm vorausgeht
+function stepNeighbor(uN, type, id, dir){
+  const us = units(), flat = []; us.forEach(u => unitSteps(u).forEach(s => flat.push({u, s})));
+  const i = flat.findIndex(x => x.u.n === uN && x.s.type === type && String(x.s.id) === String(id));
+  return i < 0 ? null : flat[i + (dir || 1)] || null;
+}
 function goStep(u, s){
   if (s.type === "note"){ pathActive = null; return showNote(u.n); }
   if (s.type === "review"){ pathActive = null; return startUnitTest(u.n); }
@@ -2535,9 +2545,9 @@ function renderPath(){
           <span style="flex:1;min-width:0"><b>Einheit ${u.n}: ${esc(u.t)}</b>${aim.includes(u.n) ? `<span class="aimtag">🎯 passt zu deinem Ziel</span>` : ""}
             <span class="small muted" style="display:block">${esc(u.sub)}</span>
             <span class="progress" style="display:block;margin-top:6px"><i style="width:${100 * dn / st.length}%"></i></span></span>
-          <span class="small muted" style="white-space:nowrap">${dn} von ${st.length}</span><span class="chev">›</span></summary>
+          <span class="small muted" style="white-space:nowrap;text-align:right">${dn} von ${st.length}<br>Schritten</span><span class="chev">›</span></summary>
         <div class="usteps">${st.map((x, k) => { const isNext = nx && nx.u.n === u.n && nx.k === k;
-          return `<button class="pstep ${x.done ? "done" : isNext ? "next" : x.part ? "part" : ""}" data-ps="${u.n}:${k}"><span class="pst">${x.done ? "✓" : isNext ? "▶" : x.part ? "…" : ""}</span><span class="pic">${x.ic}</span>
+          return `<button class="pstep ${x.type === "lesson" ? "main" : "sub"} ${x.done ? "done" : isNext ? "next" : x.part ? "part" : ""}" data-ps="${u.n}:${k}"><span class="pst">${x.done ? "✓" : isNext ? "▶" : x.part ? "…" : ""}</span><span class="pic">${x.ic}</span>
             <span class="plab"><b>${esc(x.label)}</b><small>${esc(x.hint)}${x.part && !x.done && x.type !== "review" ? " · angefangen" : ""}</small></span>${isNext ? `<span class="pgo">Starten ›</span>` : ""}</button>`; }).join("")}</div>
       </details>`; }).join("");
   $("#path").querySelectorAll("[data-ps]").forEach(b => b.onclick = () => { const [n, k] = b.dataset.ps.split(":").map(Number); const u = units()[n - 1]; goStep(u, unitSteps(u)[k]); });
@@ -2548,13 +2558,15 @@ function renderPathBar(){
   if (!pathActive || curView !== "lektionen"){ if (!el.classList.contains("hidden")){ el.classList.add("hidden"); el.dataset.sig = ""; } return; }
   const u = units()[pathActive.u - 1], s = u && unitSteps(u).find(x => x.type === pathActive.type && x.id === pathActive.id);
   if (!s){ el.classList.add("hidden"); return; }
-  const nx = pathNext(), sig = [u.n, s.type, s.id, s.done, nx ? nx.s.label : ""].join("|");
+  const nx = stepNeighbor(u.n, s.type, s.id, 1), pv = stepNeighbor(u.n, s.type, s.id, -1), sig = [u.n, s.type, s.id, s.done].join("|");
   if (el.dataset.sig === sig && !el.classList.contains("hidden")) return;
   el.dataset.sig = sig; el.classList.remove("hidden");
   el.innerHTML = `<span class="small"><b>🧭 Lernpfad</b> · Einheit ${u.n} · ${esc(s.label)}</span>${s.done ? `<span class="small" style="color:var(--good);font-weight:600">✓ erledigt</span>` : ""}
-    <span style="margin-left:auto" class="row"><button class="ghost small" id="pbHome">Zum Lernpfad</button>${s.done && nx ? `<button class="primary" id="pbNext">Weiter: ${esc(nx.s.label)} →</button>` : ""}</span>`;
+    <span style="margin-left:auto" class="row"><button class="ghost small" id="pbHome">Zum Lernpfad</button>${pv ? `<button class="small" id="pbPrev" title="Zurück zu: ${esc(pv.s.label)}">← Schritt zurück</button>` : ""}${nx ? `<button class="${s.done ? "primary" : ""} small" id="pbNext" title="Zum nächsten Schritt im Lernpfad">Weiter: ${esc(nx.s.label)} →</button>` : ""}</span>`;
   $("#pbHome").onclick = () => { location.hash = "start"; };
-  const nb = $("#pbNext"); if (nb) nb.onclick = () => { stopAllSound(); userNavAt = Date.now(); if (nx.s.type === "note" || nx.s.type === "review") location.hash = "start"; setTimeout(() => goStep(nx.u, nx.s), 40); };
+  const hop = t => () => { stopAllSound(); userNavAt = Date.now(); if (t.s.type === "note" || t.s.type === "review") location.hash = "start"; setTimeout(() => goStep(t.u, t.s), 40); };
+  const nb = $("#pbNext"); if (nb) nb.onclick = hop(nx);
+  const pb = $("#pbPrev"); if (pb) pb.onclick = hop(pv);
 }
 setInterval(renderPathBar, 700);
 document.addEventListener("click", e => { if (pathActive && e.target.closest && e.target.closest("#lkBack,#dlBack,#sbBack,#vwBack")) setTimeout(() => { location.hash = "start"; }, 0); });
@@ -2580,9 +2592,11 @@ function showNote(n){
   const r = openPathRun(`<div class="row"><button id="prBack">← Lernpfad</button><b>📌 Merkzettel · Einheit ${n}: ${esc(u.t)}</b></div>
     <p class="muted small">Kurz erklärt, was hinter den Sätzen dieser Einheit steckt. Die Beispiele stammen aus den Lektionen; Sätze aus späteren Lektionen siehst du hier schon einmal vorab.</p>
     ${u.notes.map(nt => `<div class="card"><b>${thWrap(nt[0])}</b><p style="margin:6px 0 8px">${thWrap(nt[1])}</p>${(nt[2] || []).map(exHTML).join("")}</div>`).join("")}
-    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="primary" id="prDone">Verstanden – weiter im Lernpfad →</button></div>`);
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button id="prHome">Zum Lernpfad</button><button class="primary" id="prDone">${(() => { const t = stepNeighbor(n, "note", n, 1); return t ? "Verstanden – weiter: " + esc(t.s.label) + " →" : "Verstanden →"; })()}</button></div>`);
+  const mark = () => { S.progress.notes = S.progress.notes || {}; if (!S.progress.notes[n]){ S.progress.notes[n] = today(); bumpStreak(3); } saveProgress(); };
   $("#prBack").onclick = closePathRun;
-  $("#prDone").onclick = () => { S.progress.notes = S.progress.notes || {}; if (!S.progress.notes[n]){ S.progress.notes[n] = today(); bumpStreak(3); } saveProgress(); closePathRun(); };
+  $("#prHome").onclick = () => { mark(); closePathRun(); };
+  $("#prDone").onclick = () => { mark(); const t = stepNeighbor(n, "note", n, 1); closePathRun(); if (t){ userNavAt = Date.now(); goStep(t.u, t.s); } };
 }
 /* ----- Wiederholung mit Test: Hörverstehen, Wiedererkennen, Sätze bauen – aus den Sätzen der Einheit ----- */
 let ut = null;
@@ -2687,11 +2701,12 @@ function finishUT(){
     bumpStreak(pass && !(old && old.pass) ? 20 : 5); saveProgress();
     html = `<div class="card" style="text-align:center"><div style="font-size:40px">${pass ? "🎉" : "💪"}</div><div class="mid">${ut.right} von ${n} richtig · ${pct} %</div>
       <p>${pass ? `Einheit ${u.n} bestanden.` : `Zum Bestehen brauchst du 80 %. Sieh dir die Sätze unten an und versuch es noch einmal – die Aufgaben werden neu gemischt.`}</p>
-      <div class="row" style="justify-content:center"><button id="utAgain">Nochmal</button><button class="primary" id="utHome">${pass ? "Weiter im Lernpfad →" : "Zum Lernpfad"}</button></div></div>${missed}`;
+      <div class="row" style="justify-content:center"><button id="utAgain">Nochmal</button><button id="utHome">Zum Lernpfad</button>${(() => { const t = stepNeighbor(u.n, "review", u.n, 1); return t ? `<button class="${pass ? "primary" : ""}" id="utNextStep">Weiter: ${esc(t.s.label)} →</button>` : ""; })()}</div></div>${missed}`;
   }
   $("#pathRun").innerHTML = `<div class="row"><button id="prBack">← Lernpfad</button><b>Ergebnis · Einheit ${u.n}: ${esc(u.t)}</b></div>` + html;
   $("#prBack").onclick = closePathRun; $("#utHome").onclick = closePathRun;
   const ag = $("#utAgain"); if (ag) ag.onclick = () => startUnitTest(u.n);
+  const ns = $("#utNextStep"); if (ns) ns.onclick = () => { const t = stepNeighbor(u.n, "review", u.n, 1); closePathRun(); if (t){ userNavAt = Date.now(); goStep(t.u, t.s); } };
   const mo = $("#utMore"); if (mo) mo.onclick = () => startUnitTest(u.n + 1, {place:true});
   window.scrollTo(0, 0);
 }
