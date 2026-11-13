@@ -268,6 +268,9 @@ nav a.on{background:var(--card);color:var(--ink);opacity:1;box-shadow:0 1px 3px 
 nav{flex-wrap:nowrap;flex:none} nav a{white-space:nowrap;padding:6px 10px}
 @media (max-width:1130px){ nav{flex:1 1 100%;overflow-x:auto;scrollbar-width:none} nav::-webkit-scrollbar{display:none} }
 main a:not(.card):not(.tile){color:var(--accent);text-underline-offset:2px}
+#stopInline{background:var(--bad-soft);color:var(--bad);border-color:transparent;font-weight:600;animation:stopIn .18s ease-out}
+@keyframes stopIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){ #stopInline{animation:none} }
 #stopBtn{position:fixed;left:50%;bottom:22px;z-index:55;transform:translate(-50%,90px);opacity:0;pointer-events:none;background:var(--mat);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:var(--sh-2);border-radius:99px;padding:.7rem 1.4rem;font-weight:650;color:var(--bad);transition:transform .28s cubic-bezier(.2,.9,.25,1), opacity .2s ease}
 #stopBtn.show{transform:translate(-50%,0);opacity:1;pointer-events:auto} #stopBtn.show:active{transform:translate(-50%,0) scale(.96)}
 @media (prefers-reduced-motion: reduce){ #stopBtn{transition:opacity .15s ease;transform:translate(-50%,0)} }
@@ -694,7 +697,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
   <div class="card small" id="aboutBox" style="margin-top:14px"><b>Über diese App</b>
     <p style="margin:6px 0 0">Thai Lernraum, Version <span id="aboutVer"></span>. © 2026 Olaf Margowski.</p>
     <p style="margin:6px 0 0">Die App darf kostenlos genutzt werden. Quelltext und Lerninhalte dürfen nur mit Zustimmung des Autors kopiert, verändert oder weiterverbreitet werden.</p>
-    <p style="margin:6px 0 0">Die Thai-Inhalte sind noch nicht vollständig von Muttersprachlern geprüft.</p>
+    <p style="margin:6px 0 0">Thai-Schrift und Bedeutungen hat eine Muttersprachlerin durchgesehen. Die Töne der Umschrift sind gegen die Tonregeln geprüft, aber nicht Wort für Wort von Hand kontrolliert.</p>
     <p class="muted" style="margin:6px 0 0">Schrift: Noto Sans Thai und Noto Sans Thai Looped, © 2022 The Noto Project Authors, lizenziert unter der SIL Open Font License 1.1 (<a href="https://openfontlicense.org" target="_blank" rel="noopener">openfontlicense.org</a>). Quelltext und Lizenztexte: <a href="https://github.com/Margowski/thai-lernraum" target="_blank" rel="noopener">github.com/Margowski/thai-lernraum</a></p></div>
 </section>
 </main>
@@ -702,7 +705,7 @@ details>summary{cursor:pointer} details.card>summary{list-style-position:outside
 
 <script>
 "use strict";
-const APP_VERSION = "3.6";  // bei jeder ausgelieferten Änderung erhöhen
+const APP_VERSION = "3.8";  // bei jeder ausgelieferten Änderung erhöhen
 /* ================= Daten ================= */
 // [thai, umschrift, deutsch, hinweis?]
 const DECKS = [
@@ -739,7 +742,7 @@ const DECKS = [
   ["สิบเอ็ด","sìp-èt","11","bei 11, 21 … wird 1 zu เอ็ด"],["ยี่สิบ","yîi-sìp","20","nicht สองสิบ"],
   ["ร้อย","rɔ́ɔi","100"],["พัน","phan","1000"],["ห้าสิบบาท","hâa-sìp bàat","50 Baht"]]},
  {id:"essen", name:"Essen & Trinken", ic:"🍜", cards:[
-  ["กิน","kin","essen"],["ดื่ม","dʉ̀ʉm","trinken"],["น้ำ","náam","Wasser"],["น้ำเปล่า","náam-plàao","Trinkwasser (ohne alles)"],
+  ["กิน","kin","essen"],["ดื่ม","dʉ̀ʉm","trinken"],["น้ำ","náam","Wasser"],["น้ำเปล่า","nám-plàao","Trinkwasser (ohne alles)"],
   ["ข้าว","khâao","Reis"],["ข้าวผัด","khâao-phàt","gebratener Reis"],["อร่อย","à-rɔ̀i","lecker"],
   ["เผ็ด","phèt","scharf"],["ไม่เผ็ด","mâi phèt","nicht scharf"],["เผ็ดนิดหน่อย","phèt nít-nɔ̀i","ein bisschen scharf"],
   ["ไก่","kài","Huhn"],["หมู","mǔu","Schwein"],["กุ้ง","kûng","Garnele"],["ผัก","phàk","Gemüse"],["กาแฟ","kaa-fɛɛ","Kaffee"],
@@ -790,7 +793,7 @@ const DECKS = [
 const ROLES = [
  {id:"restaurant",ic:"🍜",title:"Im Restaurant",role:"Kellnerin in einer kleinen Garküche in Bangkok",
   goals:["Begrüßen","Ein Gericht bestellen","Die Schärfe angeben","Ein Getränk bestellen","Nach der Rechnung fragen"],
-  phrases:[["ขอข้าวผัดกุ้งหนึ่งจาน","khɔ̌ɔ khâao-phàt kûng nʉ̀ng jaan","Einen Teller Garnelen-Bratreis, bitte"],["ไม่เผ็ด","mâi phèt","nicht scharf"],["ขอน้ำเปล่าหนึ่งขวด","khɔ̌ɔ náam-plàao nʉ̀ng khùat","Eine Flasche Wasser, bitte"],["เช็คบิลครับ","chék bin khráp","Die Rechnung, bitte"]]},
+  phrases:[["ขอข้าวผัดกุ้งหนึ่งจาน","khɔ̌ɔ khâao-phàt kûng nʉ̀ng jaan","Einen Teller Garnelen-Bratreis, bitte"],["ไม่เผ็ด","mâi phèt","nicht scharf"],["ขอน้ำเปล่าหนึ่งขวด","khɔ̌ɔ nám-plàao nʉ̀ng khùat","Eine Flasche Wasser, bitte"],["เช็คบิลครับ","chék bin khráp","Die Rechnung, bitte"]]},
  {id:"markt",ic:"🥭",title:"Auf dem Markt handeln",role:"Obsthändlerin auf einem Markt in Chiang Mai",
   goals:["Fragen, was etwas kostet","Sagen, dass es zu teuer ist","Um einen besseren Preis bitten","Eine Menge kaufen","Sich bedanken"],
   phrases:[["อันนี้เท่าไหร่","an-níi thâo-rài","Was kostet das?"],["แพงไปหน่อย","phɛɛng pai nɔ̀i","Etwas zu teuer"],["ลดได้ไหม","lót dâi mǎi","Geht es günstiger?"],["เอาหนึ่งกิโล","ao nʉ̀ng kì-loo","Ich nehme ein Kilo"],["มะม่วง","má-mûang","Mango"]]},
@@ -808,7 +811,7 @@ const ROLES = [
   phrases:[["จองไว้แล้วครับ","jɔɔng wái lɛ́ɛo khráp","Ich habe reserviert"],["อาหารเช้ากี่โมง","aa-hǎan cháao kìi moong","Um wie viel Uhr ist Frühstück?"],["รหัสไวไฟอะไร","rá-hàt wai-fai à-rai","Wie lautet das WLAN-Passwort?"],["ห้อง","hɔ̂ng","Zimmer"]]},
  {id:"seven",ic:"🏪",title:"Im 7-Eleven",role:"Kassierer in einem 7-Eleven",
   goals:["Fragen, ob es etwas gibt","Auf die Frage nach einer Tüte antworten","Fragen, was alles kostet","Bezahlen und danken"],
-  phrases:[["มีน้ำเปล่าไหม","mii náam-plàao mǎi","Haben Sie Wasser?"],["ไม่เอาถุงครับ","mâi ao thǔng khráp","Keine Tüte, bitte"],["ทั้งหมดเท่าไหร่","tháng-mòt thâo-rài","Was kostet alles zusammen?"],["อุ่นด้วยครับ","ùn dûai khráp","Bitte auch aufwärmen"]]},
+  phrases:[["มีน้ำเปล่าไหม","mii nám-plàao mǎi","Haben Sie Wasser?"],["ไม่เอาถุงครับ","mâi ao thǔng khráp","Keine Tüte, bitte"],["ทั้งหมดเท่าไหร่","tháng-mòt thâo-rài","Was kostet alles zusammen?"],["อุ่นด้วยครับ","ùn dûai khráp","Bitte auch aufwärmen"]]},
  {id:"apotheke",ic:"💊",title:"In der Apotheke",role:"Apothekerin",
   goals:["Sagen, was weh tut","Nach einem Mittel fragen","Fragen, wie oft man es nimmt","Bezahlen und danken"],
   phrases:[["ปวดหัว","pùat hǔa","Kopfschmerzen"],["เจ็บคอ","jèp khɔɔ","Halsschmerzen"],["มียาแก้…ไหม","mii yaa kɛ̂ɛ … mǎi","Haben Sie ein Mittel gegen …?"],["กินวันละกี่ครั้ง","kin wan lá kìi khráng","Wie oft am Tag einnehmen?"]]}
@@ -918,7 +921,7 @@ const DIALOGS = [
   qs:[["Was kostet die Mango?",["50 Baht","15 Baht","500 Baht"],0],["Möchte Tom eine Tüte?",["nein","ja","zwei Tüten"],0]]},
  {id:"d5", min:12, title:"Im Restaurant", sit:"Tom bestellt in einer kleinen Garküche.",
   lines:[["Kellnerin","f","สวัสดีค่ะ รับอะไรดีคะ","sà-wàt-dii khâ ráp à-rai dii khá","Hallo, was darf es sein?"],["Tom","m","ขอข้าวผัดกุ้งครับ ไม่เผ็ดครับ","khɔ̌ɔ khâao-phàt kûng khráp mâi phèt khráp","Garnelen-Bratreis, bitte. Nicht scharf."],
-   ["Kellnerin","f","ดื่มอะไรคะ","dʉ̀ʉm à-rai khá","Was möchten Sie trinken?"],["Tom","m","ขอน้ำเปล่าครับ","khɔ̌ɔ náam-plàao khráp","Ein Wasser, bitte."],
+   ["Kellnerin","f","ดื่มอะไรคะ","dʉ̀ʉm à-rai khá","Was möchten Sie trinken?"],["Tom","m","ขอน้ำเปล่าครับ","khɔ̌ɔ nám-plàao khráp","Ein Wasser, bitte."],
    ["Tom","m","อร่อยมากครับ เช็คบิลครับ","à-rɔ̀i mâak khráp chék bin khráp","Sehr lecker! Die Rechnung, bitte."],["Kellnerin","f","ร้อยห้าสิบบาทค่ะ","rɔ́ɔi-hâa-sìp bàat khâ","150 Baht."]],
   qs:[["Was bestellt Tom?",["Garnelen-Bratreis","Huhn mit Reis","eine Suppe"],0],["Wie scharf möchte Tom das Essen?",["nicht scharf","sehr scharf","ein bisschen scharf"],0],["Was kostet alles?",["150 Baht","50 Baht","500 Baht"],0]]},
  {id:"d6", min:14, title:"Im Taxi zum Flughafen", sit:"Tom steigt in ein Taxi in Bangkok.",
@@ -1355,7 +1358,32 @@ function wordGap(gap){ const g = S.settings.wordGap; return (g === undefined || 
 let seqRunTok = 0, userNavAt = 0;
 function stopAllSound(){ seqToken++; seqRunTok = 0; try { speechSynthesis.cancel(); } catch(e){} stopAudio(); stopHL(); updateStopBtn(); }
 function isSounding(){ return (seqRunTok && seqRunTok === seqToken) || !!curAudio || (("speechSynthesis" in window) && (speechSynthesis.speaking || speechSynthesis.pending)); }
-function updateStopBtn(){ const b = $("#stopBtn"); if (b) b.classList.toggle("show", isSounding()); }
+// Der Stopp-Knopf erscheint in der Zeile der Hörknöpfe (neben „Nochmal“, „Wort für Wort“ usw.) und verschwindet danach wieder.
+// Nur wenn auf der Seite kein Hörknopf sichtbar ist, kommt ersatzweise der schwebende Knopf unten.
+let lastPlayBtn = null, stopInline = null;
+const AUDIO_BTN = /🔊|🔉|🧩|🐢|Anhören|Nochmal|Vorlesen|Abspielen|Wort für Wort/;
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("button"); if (b && b.id !== "stopInline" && b.id !== "stopBtn") lastPlayBtn = b; }, true);
+function audioRow(){
+  const vis = el => el && el.isConnected && el.offsetParent !== null;
+  const isA = b => vis(b) && b.id !== "stopInline" && AUDIO_BTN.test(b.textContent);
+  const labelled = b => b.textContent.trim().length > 3; // beschriftete Knöpfe der Hauptkarte, nicht die kleinen Lautsprecher in Listen
+  if (isA(lastPlayBtn) && labelled(lastPlayBtn)) return lastPlayBtn;
+  const view = document.getElementById("v-" + curView); if (!view) return null;
+  const all = Array.from(view.querySelectorAll("button")).filter(isA);
+  return all.find(labelled) || (isA(lastPlayBtn) ? lastPlayBtn : null) || all[0] || null;
+}
+function updateStopBtn(){
+  const on = isSounding(), fb = $("#stopBtn");
+  if (!stopInline){ stopInline = document.createElement("button"); stopInline.id = "stopInline"; stopInline.type = "button"; stopInline.textContent = "⏹ Stopp"; stopInline.title = "Vorlesen anhalten (Esc)"; stopInline.onclick = e => { e.stopPropagation(); stopAllSound(); }; }
+  if (!on){ if (stopInline.isConnected) stopInline.remove(); if (fb) fb.classList.remove("show"); return; }
+  const anchor = audioRow();
+  if (anchor){
+    // hinter den letzten Hörknopf derselben Zeile setzen
+    let last = anchor; Array.from(anchor.parentElement.children).forEach(c => { if (c.tagName === "BUTTON" && c.id !== "stopInline" && AUDIO_BTN.test(c.textContent)) last = c; });
+    if (stopInline.previousElementSibling !== last) last.after(stopInline);
+    if (fb) fb.classList.remove("show");
+  } else { if (stopInline.isConnected) stopInline.remove(); if (fb) fb.classList.add("show"); }
+}
 setInterval(updateStopBtn, 200);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && isSounding()){ e.preventDefault(); stopAllSound(); } });
 // Blättert der Nutzer selbst weiter (Nächster Satz, Zurück, Eintrag in der Seitenleiste), gilt das als Wunsch zu hören
@@ -3050,7 +3078,7 @@ const LESSONS = [
  {id:8, ic:"🛒", title:"Das hier, bitte", goal:"Etwas verlangen und nach dem Preis fragen", items:[
   {th:"อันนี้", rom:"an-níi", de:"das hier", words:[["อัน","an","Ding, Stück"],["นี้","níi","dies"]], tip:"Dazu auf die Sache zeigen."},
   {th:"อันนี้เท่าไหร่ครับ", rom:"an-níi thâo-rài khráp", de:"Was kostet das?", words:[["อันนี้","an-níi","das hier"],["เท่าไหร่","thâo-rài","wie viel"],["ครับ","khráp","Höflichkeitswort"]], tip:"Fragewort wieder am Ende."},
-  {th:"ขอน้ำเปล่าครับ", rom:"khɔ̌ɔ náam-plàao khráp", de:"Ein Wasser, bitte", words:[["ขอ","khɔ̌ɔ","ich hätte gern"],["น้ำเปล่า","náam-plàao","Trinkwasser"],["ครับ","khráp","Höflichkeitswort"]], tip:"ขอ + Sache = höfliche Bitte. Damit kann man fast alles bestellen."},
+  {th:"ขอน้ำเปล่าครับ", rom:"khɔ̌ɔ nám-plàao khráp", de:"Ein Wasser, bitte", words:[["ขอ","khɔ̌ɔ","ich hätte gern"],["น้ำเปล่า","nám-plàao","Trinkwasser"],["ครับ","khráp","Höflichkeitswort"]], tip:"ขอ + Sache = höfliche Bitte. Damit kann man fast alles bestellen."},
   {th:"เอาอันนี้ครับ", rom:"ao an-níi khráp", de:"Ich nehme das", words:[["เอา","ao","nehmen, wollen"],["อันนี้","an-níi","das hier"],["ครับ","khráp","Höflichkeitswort"]], tip:"Kurz und alltäglich."}]}
 ];
 // --- Hilfen für kompakte Lektionsdaten: "thai|rom|bedeutung ; thai|rom|bedeutung"
@@ -3101,7 +3129,7 @@ LESSONS.push(
   I("หิวน้ำครับ","hǐu náam khráp","Ich habe Durst","หิว|hǐu|hungrig; น้ำ|náam|Wasser; "+K,"„hungrig auf Wasser“."),
   I("ขอกาแฟเย็นครับ","khɔ̌ɔ kaa-fɛɛ yen khráp","Einen Eiskaffee, bitte","ขอ|khɔ̌ɔ|ich hätte gern; กาแฟ|kaa-fɛɛ|Kaffee; เย็น|yen|kalt; "+K,""),
   I("ขอเบียร์หนึ่งขวดครับ","khɔ̌ɔ bia nʉ̀ng khùat khráp","Eine Flasche Bier, bitte","ขอ|khɔ̌ɔ|ich hätte gern; เบียร์|bia|Bier; หนึ่ง|nʉ̀ng|eins; ขวด|khùat|Flasche; "+K,"Muster: Sache + Zahl + Zählwort (ขวด = Flasche)."),
-  I("ไม่ใส่น้ำแข็งครับ","mâi sài náam-khɛ̌ng khráp","Ohne Eis, bitte","ไม่|mâi|nicht; ใส่|sài|hineintun; น้ำแข็ง|náam-khɛ̌ng|Eis (hartes Wasser); "+K,"")]},
+  I("ไม่ใส่น้ำแข็งครับ","mâi sài nám-khɛ̌ng khráp","Ohne Eis, bitte","ไม่|mâi|nicht; ใส่|sài|hineintun; น้ำแข็ง|nám-khɛ̌ng|Eis (hartes Wasser); "+K,"")]},
  {id:14, ic:"🚕", title:"Taxi & Richtung", goal:"Ziel nennen und lotsen", items:[
   I("ไปสนามบินครับ","pai sà-nǎam-bin khráp","Zum Flughafen, bitte","ไป|pai|gehen, fahren; สนามบิน|sà-nǎam-bin|Flughafen; "+K,"Muster: ไป + Ziel."),
   I("เลี้ยวซ้ายครับ","líao sáai khráp","Links abbiegen","เลี้ยว|líao|abbiegen; ซ้าย|sáai|links; "+K,""),
@@ -3122,7 +3150,7 @@ LESSONS.push(
  {id:17, ic:"🆘", title:"Hilfe & Notfall", goal:"Um Hilfe bitten", items:[
   I("ช่วยด้วย","chûai dûai","Hilfe!","ช่วย|chûai|helfen; ด้วย|dûai|bitte (auch)","Laut rufen – ohne Höflichkeitswort."),
   I("ผมไม่สบายครับ","phǒm mâi sà-baai khráp","Mir geht es nicht gut / Ich bin krank","ผม|phǒm|ich; ไม่|mâi|nicht; สบาย|sà-baai|wohl; "+K,"Gegenteil von สบายดี."),
-  I("โรงพยาบาลอยู่ที่ไหนครับ","rong-phá-yaa-baan yùu thîi-nǎi khráp","Wo ist das Krankenhaus?","โรงพยาบาล|rong-phá-yaa-baan|Krankenhaus; อยู่|yùu|sich befinden; ที่ไหน|thîi-nǎi|wo; "+K,"Gleiches Muster wie „Wo ist die Toilette?“"),
+  I("โรงพยาบาลอยู่ที่ไหนครับ","roong-phá-yaa-baan yùu thîi-nǎi khráp","Wo ist das Krankenhaus?","โรงพยาบาล|roong-phá-yaa-baan|Krankenhaus; อยู่|yùu|sich befinden; ที่ไหน|thîi-nǎi|wo; "+K,"Gleiches Muster wie „Wo ist die Toilette?“"),
   I("เรียกตำรวจด้วยครับ","rîak tam-rùat dûai khráp","Bitte rufen Sie die Polizei","เรียก|rîak|rufen; ตำรวจ|tam-rùat|Polizei; ด้วย|dûai|bitte; "+K,"Notruf Touristenpolizei: 1155."),
   I("ด่วน","dùan","dringend","ด่วน|dùan|dringend, eilig","")]},
  {id:18, ic:"🏨", title:"Im Hotel", goal:"Einchecken und nachfragen", items:[
@@ -3450,7 +3478,7 @@ LESSONS.push(
   J("Ich habe einen internationalen Führerschein", [PM, MII, "ใบขับขี่|bai-khàp-khìi|Führerschein", "สากล|sǎa-kon|international", K])]},
  {id:60, ic:"🛎️", title:"Probleme im Hotel", goal:"Kein Wasser, Lärm, Zimmer wechseln, Schlüssel, verlängern", items:[
   J("Das Wasser läuft nicht", ["น้ำ|náam|Wasser", NEG, "ไหล|lǎi|fließen", K]),
-  J("Es gibt kein warmes Wasser", [NEG, MII, "น้ำอุ่น|náam-ùn|warmes Wasser", K]),
+  J("Es gibt kein warmes Wasser", [NEG, MII, "น้ำอุ่น|nám-ùn|warmes Wasser", K]),
   J("Das Zimmer nebenan ist sehr laut", ["ห้อง|hɔ̂ng|Raum, Zimmer", "ข้างๆ|khâang-khâang|nebenan", "เสียงดัง|sǐang-dang|laut", MAK, K]),
   QF("Kann ich das Zimmer wechseln?", [KHO, "เปลี่ยน|plìan|wechseln", "ห้อง|hɔ̂ng|Raum, Zimmer", DM, K]),
   J("Der Schlüssel ist weg", ["กุญแจ|kun-jɛɛ|Schlüssel", "หาย|hǎai|verschwinden", K]),
@@ -3520,7 +3548,7 @@ LESSONS.push(
   J("Ich habe mich zweimal übergeben", [PM, "อาเจียน|aa-jian|sich übergeben", "สอง|sɔ̌ɔng|2", "ครั้ง|khráng|Mal", K], "อาเจียน ist das Wort für die Arztpraxis; im Alltag sagt man อ้วก."),
   J("Ich bekomme schlecht Luft", [PM, "หายใจ|hǎai-jai|atmen", NEG, "สะดวก|sà-dùak|ungehindert, bequem", K]),
   QF("Brauche ich eine Spritze?", [TONG, "ฉีดยา|chìit-yaa|spritzen", MAI, K]),
-  QF("Muss ich im Krankenhaus bleiben?", [TONG, "นอน|nɔɔn|schlafen, liegen", "โรงพยาบาล|rong-phá-yaa-baan|Krankenhaus", MAI, K]),
+  QF("Muss ich im Krankenhaus bleiben?", [TONG, "นอน|nɔɔn|schlafen, liegen", "โรงพยาบาล|roong-phá-yaa-baan|Krankenhaus", MAI, K]),
   J("Ich habe eine Krankenversicherung", [PM, MII, "ประกันสุขภาพ|prà-kan-sùk-khà-phâap|Krankenversicherung", K])]},
  {id:69, ic:"🚑", title:"Unfall und Notfall", goal:"Krankenwagen, Sturz, Blut, bewusstlos, nicht bewegen", items:[
   J("Bitte rufen Sie einen Krankenwagen", ["ช่วย|chûai|helfen, bitte", "เรียก|rîak|rufen", "รถพยาบาล|rót-phá-yaa-baan|Krankenwagen", DUAI, K], "Notruf für Rettungsdienst: 1669. Touristenpolizei: 1155."),
@@ -4580,7 +4608,7 @@ const NONE = ["", "", "—", {}];
 const SB_SUBJ = [["ผม","phǒm","ich (Mann)",{de:"Ich", p:1}], ["คุณ","khun","du / Sie",{de:"Du", p:2}]];
 const SB_VERB = [["กิน","kin","essen",{1:"esse",2:"isst",k:"f"}], ["ดื่ม","dʉ̀ʉm","trinken",{1:"trinke",2:"trinkst",k:"d"}], ["ชอบ","chɔ̂ɔp","mögen",{1:"mag",2:"magst",k:"*"}]];
 const SB_OBJ = [["ข้าว","khâao","Reis",{de:"Reis", no:"keinen Reis", k:"f"}], ["ข้าวผัด","khâao-phàt","gebratener Reis",{de:"Bratreis", no:"keinen Bratreis", k:"f"}],
-  ["กาแฟ","kaa-fɛɛ","Kaffee",{de:"Kaffee", no:"keinen Kaffee", k:"d"}], ["น้ำเปล่า","náam-plàao","Trinkwasser",{de:"Wasser", no:"kein Wasser", k:"d"}]];
+  ["กาแฟ","kaa-fɛɛ","Kaffee",{de:"Kaffee", no:"keinen Kaffee", k:"d"}], ["น้ำเปล่า","nám-plàao","Trinkwasser",{de:"Wasser", no:"kein Wasser", k:"d"}]];
 const objOk = v => v[0][3].k === "*" || v[0][3].k === v[1][3].k;
 const PATTERNS = [
  {id:"p1", ic:"🧱", title:"Wer – tut – was", min:1,
@@ -4619,8 +4647,8 @@ const PATTERNS = [
  {id:"p6", ic:"🙏", title:"Bitten mit ขอ", min:8,
   rule:"ขอ + Sache ist die höfliche Bitte „Ich hätte gern …“. Wünsche hängt man einfach hinten an: ไม่เผ็ด (nicht scharf), ไม่ใส่น้ำแข็ง (ohne Eis).",
   slots:[{lab:"bitte", o:[["ขอ","khɔ̌ɔ","ich hätte gern",{}]]},
-    {lab:"was?", o:[["ข้าวผัด","khâao-phàt","gebratener Reis",{de:"Einen Bratreis", k:"f"}], ["ส้มตำ","sôm-tam","Papayasalat",{de:"Einen Papayasalat", k:"f"}], ["กาแฟ","kaa-fɛɛ","Kaffee",{de:"Einen Kaffee", k:"d"}], ["น้ำเปล่า","náam-plàao","Trinkwasser",{de:"Ein Wasser", k:"d"}]]},
-    {lab:"Wunsch", o:[NONE, ["ไม่เผ็ด","mâi phèt","nicht scharf",{de:"nicht scharf", k:"f"}], ["ไม่ใส่น้ำแข็ง","mâi sài náam-khɛ̌ng","ohne Eis",{de:"ohne Eis", k:"d"}]]}],
+    {lab:"was?", o:[["ข้าวผัด","khâao-phàt","gebratener Reis",{de:"Einen Bratreis", k:"f"}], ["ส้มตำ","sôm-tam","Papayasalat",{de:"Einen Papayasalat", k:"f"}], ["กาแฟ","kaa-fɛɛ","Kaffee",{de:"Einen Kaffee", k:"d"}], ["น้ำเปล่า","nám-plàao","Trinkwasser",{de:"Ein Wasser", k:"d"}]]},
+    {lab:"Wunsch", o:[NONE, ["ไม่เผ็ด","mâi phèt","nicht scharf",{de:"nicht scharf", k:"f"}], ["ไม่ใส่น้ำแข็ง","mâi sài nám-khɛ̌ng","ohne Eis",{de:"ohne Eis", k:"d"}]]}],
   ok: v => !v[2][3].k || v[2][3].k === v[1][3].k,
   de: v => `${v[1][3].de}${v[2][3].de ? ", " + v[2][3].de : ""}, bitte.`},
  {id:"p7", ic:"🤝", title:"Geht das? – ได้ไหม", min:6, q:true,
